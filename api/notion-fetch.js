@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Content-Type', 'application/json')
 
@@ -64,10 +64,10 @@ async function fetchBlocksHtml(blockId, notionKey) {
     const params = new URLSearchParams({ page_size: '100' })
     if (cursor) params.set('start_cursor', cursor)
 
-    const res = await fetch(`https://api.notion.com/v1/blocks/${blockId}/children?${params}`, {
+    const resp = await fetch(`https://api.notion.com/v1/blocks/${blockId}/children?${params}`, {
       headers: { Authorization: `Bearer ${notionKey}`, 'Notion-Version': '2022-06-28' },
     })
-    const data = await res.json()
+    const data = await resp.json()
 
     for (const block of (data.results || [])) {
       const type = block.type
@@ -139,10 +139,10 @@ async function fetchBlocksHtml(blockId, notionKey) {
 }
 
 async function renderTable(blockId, hasHeader, notionKey) {
-  const res = await fetch(`https://api.notion.com/v1/blocks/${blockId}/children?page_size=100`, {
+  const resp = await fetch(`https://api.notion.com/v1/blocks/${blockId}/children?page_size=100`, {
     headers: { Authorization: `Bearer ${notionKey}`, 'Notion-Version': '2022-06-28' },
   })
-  const data = await res.json()
+  const data = await resp.json()
   const rows = data.results || []
 
   let html = '<table>'
