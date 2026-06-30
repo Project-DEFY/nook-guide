@@ -1,19 +1,29 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { allSections } from '../lib/guideStructure'
+import { searchContent, highlightMatch } from '../lib/searchIndex'
+
+function Highlighted({ text, query }) {
+  const parts = highlightMatch(text, query)
+  return (
+    <>
+      {parts.map((part, i) =>
+        typeof part === 'string'
+          ? part
+          : <mark key={i} className="bg-yellow-100 text-yellow-900 rounded px-0.5">{part.text}</mark>
+      )}
+    </>
+  )
+}
 
 export default function SearchBar() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
-  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
   const inputRef = useRef(null)
   const dropdownRef = useRef(null)
   const debounceRef = useRef(null)
-
-  const sections = allSections()
 
   const search = useCallback((q) => {
     if (!q.trim()) {
@@ -21,24 +31,11 @@ export default function SearchBar() {
       setOpen(false)
       return
     }
-
-    const lower = q.toLowerCase()
-    // Client-side search over guide structure
-    const localResults = sections
-      .filter(s => s.title.toLowerCase().includes(lower))
-      .slice(0, 8)
-      .map(s => ({
-        id: s.id,
-        title: s.title,
-        partTitle: s.part.title,
-        partColor: s.part.color,
-        readTime: s.readTime,
-      }))
-
-    setResults(localResults)
-    setOpen(localResults.length > 0)
+    const matched = searchContent(q, 7)
+    setResults(matched)
+    setOpen(matched.length > 0)
     setActiveIndex(-1)
-  }, [sections])
+  }, [])
 
   useEffect(() => {
     clearTimeout(debounceRef.current)
@@ -133,22 +130,29 @@ export default function SearchBar() {
                 setOpen(false)
                 setQuery('')
               }}
-              className={`w-full text-left px-4 py-3 flex flex-col gap-0.5 hover:bg-gray-50
+              className={`w-full text-left px-4 py-3 flex flex-col gap-1 hover:bg-gray-50
                 border-b border-gray-100 last:border-0 transition-colors
                 ${activeIndex === i ? 'bg-blue-50' : ''}`}
             >
-              <span className="text-sm font-medium text-gray-900 line-clamp-1">{r.title}</span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <span
-                  className="text-xs font-medium px-1.5 py-0.5 rounded text-white"
-                  style={{ backgroundColor: r.partColor }}
+                  className="text-[10px] font-medium px-1.5 py-0.5 rounded text-white flex-shrink-0"
+                  style={{ backgroundColor: r.part.color }}
                 >
-                  {r.partTitle}
+                  {r.part.title}
                 </span>
                 {r.readTime && (
-                  <span className="text-xs text-gray-400">{r.readTime}</span>
+                  <span className="text-[10px] text-gray-400">{r.readTime}</span>
                 )}
               </div>
+              <span className="text-sm font-medium text-gray-900 line-clamp-1">
+                <Highlighted text={r.title} query={r.titleMatch ? query : ''} />
+              </span>
+              {r.snippet && (
+                <span className="text-xs text-gray-500 line-clamp-1 leading-relaxed">
+                  <Highlighted text={r.snippet} query={query} />
+                </span>
+              )}
             </button>
           ))}
           <button
