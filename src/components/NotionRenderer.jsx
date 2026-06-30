@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import LoadingSpinner from './LoadingSpinner'
+import { PAGE_CONTENT } from '../data/pageContent'
 
 export default function NotionRenderer({ pageId, onMetadata }) {
   const [html, setHtml] = useState(null)
@@ -11,7 +12,16 @@ export default function NotionRenderer({ pageId, onMetadata }) {
     setHtml(null)
     setError(null)
 
-    // Check sessionStorage cache first
+    // 1. Try static content first (instant, no network)
+    const staticData = PAGE_CONTENT[pageId]
+    if (staticData?.html) {
+      setHtml(staticData.html)
+      if (onMetadata) onMetadata({ lastEdited: staticData.lastEdited || null })
+      setLoading(false)
+      return
+    }
+
+    // 2. Check sessionStorage cache
     const cacheKey = `notion-${pageId}`
     const cached = sessionStorage.getItem(cacheKey)
     if (cached) {
@@ -27,6 +37,7 @@ export default function NotionRenderer({ pageId, onMetadata }) {
       return
     }
 
+    // 3. Fall back to live Notion API
     fetch(`/api/notion-fetch?id=${pageId}`)
       .then(r => r.json())
       .then(data => {
@@ -42,7 +53,7 @@ export default function NotionRenderer({ pageId, onMetadata }) {
       .finally(() => setLoading(false))
   }, [pageId])
 
-  if (loading) return <LoadingSpinner text="Loading content from Notion..." />
+  if (loading) return <LoadingSpinner text="Loading content…" />
   if (error) return (
     <div className="rounded-xl border border-red-100 bg-red-50 p-6 text-center">
       <p className="text-red-600 font-medium mb-1">Failed to load content</p>

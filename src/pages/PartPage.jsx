@@ -61,12 +61,6 @@ export default function PartPage() {
                   {part.tag && (
                     <span className="text-xs text-gray-500 font-medium">{part.tag}</span>
                   )}
-                  {part.isNew && (
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full
-                      bg-amber/20 text-amber border border-amber/30">
-                      NEW IN V2.1
-                    </span>
-                  )}
                 </div>
                 <h1 className="text-2xl font-bold text-navy">{part.title}</h1>
                 <p className="text-gray-500 mt-1 text-sm max-w-xl">{part.description}</p>
@@ -120,12 +114,6 @@ function SectionCard({ section, part, index, onClick }) {
                 SOP {section.sopNum}
               </span>
             )}
-            {section.isNew && (
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full
-                bg-amber/20 text-amber border border-amber/30">
-                NEW
-              </span>
-            )}
           </div>
           {section.readTime && (
             <span className="text-xs text-gray-400 font-medium flex-shrink-0">
@@ -138,6 +126,12 @@ function SectionCard({ section, part, index, onClick }) {
           transition-colors leading-snug mb-1">
           {section.title}
         </h3>
+
+        {section.description && (
+          <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 mt-1">
+            {section.description}
+          </p>
+        )}
 
         <div className="flex items-center justify-end mt-3">
           <svg

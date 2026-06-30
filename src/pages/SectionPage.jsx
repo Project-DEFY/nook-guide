@@ -125,12 +125,6 @@ export default function SectionPage() {
                       SOP {section.sopNum}
                     </span>
                   )}
-                  {section.isNew && (
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full
-                      bg-amber/20 text-amber border border-amber/30">
-                      NEW IN V2.1
-                    </span>
-                  )}
                   {section.readTime && (
                     <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -9,21 +9,21 @@ const QUICK_PATHS = [
     label: 'New Fellow',
     description: 'Start with the welcome & model',
     icon: '👋',
-    sectionId: '379fef71-1233-81b1-ab23-dbf7daff242c', // NF Welcome Letter
+    sectionId: '379fef71-1233-81b1-ab23-dbf7daff242c',
     color: '#059669',
   },
   {
     label: 'Experienced Fellow',
-    description: 'Jump to V2.1 new additions',
+    description: 'Jump to SOPs 20–24',
     icon: '🔥',
-    sectionId: '379fef71-1233-8168-b40b-ee6f1e075858', // SOP 20
+    sectionId: '379fef71-1233-8168-b40b-ee6f1e075858',
     color: '#EA580C',
   },
   {
     label: 'Setting Up a Nook',
     description: 'Infrastructure & space specs',
     icon: '🛠️',
-    sectionId: '379fef71-1233-81d0-8ceb-c5eaa57ea649', // Physical Space Specification
+    sectionId: '379fef71-1233-81d0-8ceb-c5eaa57ea649',
     color: '#475569',
   },
 ]
@@ -81,39 +81,33 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Parts grid */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-5">
-            All Parts
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {GUIDE_STRUCTURE.parts.map(part => (
-              <PartCard key={part.id} part={part} onClick={() => navigate(`/part/${part.id}`)} />
-            ))}
-          </div>
+        {/* Full table of contents */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+          {GUIDE_STRUCTURE.parts.map(part => (
+            <PartSection key={part.id} part={part} navigate={navigate} />
+          ))}
         </div>
       </main>
     </div>
   )
 }
 
-function PartCard({ part, onClick }) {
+function PartSection({ part, navigate }) {
   return (
-    <button
-      onClick={onClick}
-      className="text-left bg-white rounded-xl border border-gray-100
-        hover:shadow-lg transition-all duration-200 overflow-hidden
-        cursor-pointer group flex"
-    >
-      {/* Color bar */}
-      <div
-        className="w-1.5 flex-shrink-0 rounded-l-xl"
-        style={{ backgroundColor: part.color }}
-      />
-
-      <div className="flex-1 p-5">
-        <div className="flex items-start justify-between gap-3 mb-2">
-          <div className="flex items-center gap-2">
+    <div>
+      {/* Part header */}
+      <button
+        onClick={() => navigate(`/part/${part.id}`)}
+        className="w-full text-left group mb-4"
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
+            style={{ backgroundColor: `${part.color}20` }}
+          >
+            {part.icon}
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
             <span
               className="text-xs font-bold px-2 py-0.5 rounded-full text-white"
               style={{ backgroundColor: part.color }}
@@ -123,34 +117,79 @@ function PartCard({ part, onClick }) {
             {part.tag && (
               <span className="text-xs text-gray-500 font-medium">{part.tag}</span>
             )}
-            {part.isNew && (
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full
-                bg-amber/20 text-amber border border-amber/30">
-                NEW IN V2.1
-              </span>
-            )}
+            <h2 className="text-base font-bold text-navy group-hover:text-accent transition-colors">
+              {part.title}
+            </h2>
           </div>
-          <span className="text-xl flex-shrink-0">{part.icon}</span>
-        </div>
-
-        <h3 className="text-base font-bold text-navy mb-1 group-hover:text-accent transition-colors">
-          {part.title}
-        </h3>
-        <p className="text-sm text-gray-500 leading-relaxed mb-3 line-clamp-2">
-          {part.description}
-        </p>
-
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-gray-400 font-medium">
-            {part.sections.length} section{part.sections.length !== 1 ? 's' : ''}
-          </span>
           <svg
-            className="w-4 h-4 text-gray-300 group-hover:text-accent group-hover:translate-x-0.5 transition-all"
+            className="w-4 h-4 text-gray-300 group-hover:text-accent group-hover:translate-x-0.5
+              transition-all ml-auto flex-shrink-0"
             fill="none" stroke="currentColor" viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </div>
+        <p className="text-xs text-gray-400 mt-1.5 ml-11">{part.description}</p>
+      </button>
+
+      {/* Section cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 ml-0">
+        {part.sections.map(section => (
+          <SectionMiniCard
+            key={section.id}
+            section={section}
+            part={part}
+            onClick={() => navigate(`/section/${section.id}`)}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function SectionMiniCard({ section, part, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="text-left bg-white rounded-xl border border-gray-100
+        hover:border-gray-200 hover:shadow-md transition-all duration-150
+        cursor-pointer group flex overflow-hidden"
+    >
+      <div className="w-1 flex-shrink-0" style={{ backgroundColor: part.color }} />
+      <div className="flex-1 px-4 py-3.5">
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {section.sopNum && (
+              <span
+                className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white leading-none"
+                style={{ backgroundColor: part.color }}
+              >
+                SOP {section.sopNum}
+              </span>
+            )}
+            {section.readTime && (
+              <span className="text-[10px] text-gray-400">{section.readTime}</span>
+            )}
+          </div>
+          <svg
+            className="w-3.5 h-3.5 text-gray-200 group-hover:text-accent
+              group-hover:translate-x-0.5 transition-all flex-shrink-0"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+
+        <h3 className="text-xs font-semibold text-navy group-hover:text-accent
+          transition-colors leading-snug mb-1">
+          {section.title}
+        </h3>
+
+        {section.description && (
+          <p className="text-[11px] text-gray-400 leading-relaxed line-clamp-2">
+            {section.description}
+          </p>
+        )}
       </div>
     </button>
   )
