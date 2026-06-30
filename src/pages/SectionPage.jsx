@@ -1,0 +1,201 @@
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import Header from '../components/Header'
+import NotionRenderer from '../components/NotionRenderer'
+import { findSection, GUIDE_STRUCTURE } from '../lib/guideStructure'
+
+export default function SectionPage() {
+  const { sectionId } = useParams()
+  const navigate = useNavigate()
+  const [scrollProgress, setScrollProgress] = useState(0)
+  const [toc, setToc] = useState([])
+  const contentRef = useRef(null)
+
+  const found = findSection(sectionId)
+
+  // Scroll progress
+  useEffect(() => {
+    function handleScroll() {
+      const doc = document.documentElement
+      const scrollTop = doc.scrollTop || document.body.scrollTop
+      const scrollHeight = doc.scrollHeight - doc.clientHeight
+      setScrollProgress(scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // Extract TOC from rendered content
+  useEffect(() => {
+    if (!contentRef.current) return
+    const timer = setTimeout(() => {
+      const headings = contentRef.current?.querySelectorAll('h2, h3') || []
+      const items = Array.from(headings).map((h, i) => {
+        const id = `heading-${i}`
+        h.id = id
+        return { id, text: h.textContent, level: h.tagName }
+      })
+      setToc(items)
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [sectionId])
+
+  // Find next section
+  const getNextSection = () => {
+    if (!found) return null
+    const { part, section } = found
+    const idx = part.sections.findIndex(s => s.id === sectionId)
+    if (idx < part.sections.length - 1) {
+      return { section: part.sections[idx + 1], part }
+    }
+    // Try next part
+    const partIdx = GUIDE_STRUCTURE.parts.findIndex(p => p.id === part.id)
+    if (partIdx < GUIDE_STRUCTURE.parts.length - 1) {
+      const nextPart = GUIDE_STRUCTURE.parts[partIdx + 1]
+      return { section: nextPart.sections[0], part: nextPart }
+    }
+    return null
+  }
+
+  const nextSection = getNextSection()
+
+  if (!found) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="pt-14 flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <p className="text-gray-500 text-lg">Section not found.</p>
+            <Link to="/" className="text-accent text-sm mt-2 block hover:underline">
+              ← Back to Home
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const { section, part } = found
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Reading progress bar */}
+      <div className="fixed top-0 left-0 right-0 z-50 h-0.5 bg-gray-200">
+        <div
+          className="h-full transition-all duration-100"
+          style={{ width: `${scrollProgress}%`, backgroundColor: part.color }}
+        />
+      </div>
+
+      <Header />
+
+      <main className="pt-14">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-1.5 text-sm text-gray-400 mb-6 flex-wrap">
+            <Link to="/" className="hover:text-accent transition-colors">Home</Link>
+            <span>/</span>
+            <Link to={`/part/${part.id}`} className="hover:text-accent transition-colors">
+              {part.title}
+            </Link>
+            <span>/</span>
+            <span className="text-gray-600 font-medium line-clamp-1">{section.title}</span>
+          </nav>
+
+          <div className="flex gap-8">
+            {/* Main content */}
+            <div className="flex-1 min-w-0">
+              <div className="bg-white rounded-xl border border-gray-100 p-6 sm:p-8">
+                {/* Section header */}
+                <div className="flex flex-wrap items-center gap-2 mb-4">
+                  {section.sopNum && (
+                    <span
+                      className="text-xs font-bold px-2.5 py-1 rounded-full text-white"
+                      style={{ backgroundColor: part.color }}
+                    >
+                      SOP {section.sopNum}
+                    </span>
+                  )}
+                  {section.isNew && (
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full
+                      bg-amber/20 text-amber border border-amber/30">
+                      NEW IN V2.1
+                    </span>
+                  )}
+                  {section.readTime && (
+                    <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {section.readTime}
+                    </span>
+                  )}
+                </div>
+
+                <h1 className="text-2xl sm:text-3xl font-bold text-navy mb-6">
+                  {section.title}
+                </h1>
+
+                {/* Notion content */}
+                <div ref={contentRef}>
+                  <NotionRenderer pageId={sectionId} />
+                </div>
+
+                {/* Next section */}
+                {nextSection && (
+                  <div className="mt-10 pt-6 border-t border-gray-100">
+                    <button
+                      onClick={() => navigate(`/section/${nextSection.section.id}`)}
+                      className="flex items-center justify-between w-full p-4 rounded-xl
+                        border border-gray-100 hover:border-accent hover:bg-blue-50
+                        transition-all group text-left"
+                    >
+                      <div>
+                        <p className="text-xs text-gray-400 mb-0.5">Next section</p>
+                        <p className="text-sm font-semibold text-navy group-hover:text-accent transition-colors">
+                          {nextSection.section.title}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5">{nextSection.part.title}</p>
+                      </div>
+                      <svg className="w-5 h-5 text-gray-300 group-hover:text-accent
+                        group-hover:translate-x-0.5 transition-all flex-shrink-0 ml-4"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Table of contents sidebar */}
+            {toc.length > 0 && (
+              <aside className="hidden xl:block w-56 flex-shrink-0">
+                <div className="sticky top-20">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+                    On this page
+                  </p>
+                  <nav className="space-y-1">
+                    {toc.map(item => (
+                      <a
+                        key={item.id}
+                        href={`#${item.id}`}
+                        className={`block text-xs text-gray-500 hover:text-accent
+                          transition-colors leading-relaxed py-0.5
+                          ${item.level === 'H3' ? 'pl-3 border-l border-gray-200' : ''}`}
+                      >
+                        {item.text}
+                      </a>
+                    ))}
+                  </nav>
+                </div>
+              </aside>
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}
