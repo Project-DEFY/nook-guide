@@ -3,6 +3,7 @@ import { useState, useEffect, createContext, useContext } from 'react'
 import { supabase } from './lib/supabase'
 import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
+import AuthCallback from './pages/AuthCallback'
 import Home from './pages/Home'
 import PartPage from './pages/PartPage'
 import SectionPage from './pages/SectionPage'
@@ -79,6 +80,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={session ? <Navigate to="/" /> : <Login />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/part/:partId" element={<ProtectedRoute><PartPage /></ProtectedRoute>} />
           <Route path="/section/:sectionId" element={<ProtectedRoute><SectionPage /></ProtectedRoute>} />
