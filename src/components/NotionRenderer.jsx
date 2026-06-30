@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import LoadingSpinner from './LoadingSpinner'
 
-export default function NotionRenderer({ pageId }) {
+export default function NotionRenderer({ pageId, onMetadata }) {
   const [html, setHtml] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -12,9 +12,17 @@ export default function NotionRenderer({ pageId }) {
     setError(null)
 
     // Check sessionStorage cache first
-    const cached = sessionStorage.getItem(`notion-${pageId}`)
+    const cacheKey = `notion-${pageId}`
+    const cached = sessionStorage.getItem(cacheKey)
     if (cached) {
-      setHtml(cached)
+      try {
+        const parsed = JSON.parse(cached)
+        setHtml(parsed.html)
+        if (onMetadata) onMetadata({ lastEdited: parsed.lastEdited })
+      } catch {
+        // legacy plain-html cache
+        setHtml(cached)
+      }
       setLoading(false)
       return
     }
@@ -23,8 +31,12 @@ export default function NotionRenderer({ pageId }) {
       .then(r => r.json())
       .then(data => {
         if (data.error) throw new Error(data.error)
-        sessionStorage.setItem(`notion-${pageId}`, data.html)
+        sessionStorage.setItem(cacheKey, JSON.stringify({
+          html: data.html,
+          lastEdited: data.lastEdited || null,
+        }))
         setHtml(data.html)
+        if (onMetadata) onMetadata({ lastEdited: data.lastEdited || null })
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))

@@ -16,9 +16,10 @@ export default async function handler(req, res) {
     }).then(r => r.json())
 
     const title = extractTitle(pageMeta)
+    const lastEdited = pageMeta.last_edited_time || null
     const html = await fetchBlocksHtml(pageId, notionKey)
 
-    return res.status(200).json({ html, title })
+    return res.status(200).json({ html, title, lastEdited })
   } catch (err) {
     return res.status(500).json({ error: err.message })
   }

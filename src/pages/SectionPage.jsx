@@ -9,6 +9,7 @@ export default function SectionPage() {
   const navigate = useNavigate()
   const [scrollProgress, setScrollProgress] = useState(0)
   const [toc, setToc] = useState([])
+  const [lastEdited, setLastEdited] = useState(null)
   const contentRef = useRef(null)
 
   const found = findSection(sectionId)
@@ -40,24 +41,32 @@ export default function SectionPage() {
     return () => clearTimeout(timer)
   }, [sectionId])
 
-  // Find next section
-  const getNextSection = () => {
-    if (!found) return null
-    const { part, section } = found
+  const getAdjacentSections = () => {
+    if (!found) return { prev: null, next: null }
+    const { part } = found
     const idx = part.sections.findIndex(s => s.id === sectionId)
-    if (idx < part.sections.length - 1) {
-      return { section: part.sections[idx + 1], part }
-    }
-    // Try next part
     const partIdx = GUIDE_STRUCTURE.parts.findIndex(p => p.id === part.id)
-    if (partIdx < GUIDE_STRUCTURE.parts.length - 1) {
-      const nextPart = GUIDE_STRUCTURE.parts[partIdx + 1]
-      return { section: nextPart.sections[0], part: nextPart }
+
+    let prev = null
+    if (idx > 0) {
+      prev = { section: part.sections[idx - 1], part }
+    } else if (partIdx > 0) {
+      const prevPart = GUIDE_STRUCTURE.parts[partIdx - 1]
+      prev = { section: prevPart.sections[prevPart.sections.length - 1], part: prevPart }
     }
-    return null
+
+    let next = null
+    if (idx < part.sections.length - 1) {
+      next = { section: part.sections[idx + 1], part }
+    } else if (partIdx < GUIDE_STRUCTURE.parts.length - 1) {
+      const nextPart = GUIDE_STRUCTURE.parts[partIdx + 1]
+      next = { section: nextPart.sections[0], part: nextPart }
+    }
+
+    return { prev, next }
   }
 
-  const nextSection = getNextSection()
+  const { prev: prevSection, next: nextSection } = getAdjacentSections()
 
   if (!found) {
     return (
@@ -133,38 +142,75 @@ export default function SectionPage() {
                   )}
                 </div>
 
-                <h1 className="text-2xl sm:text-3xl font-bold text-navy mb-6">
-                  {section.title}
-                </h1>
+                <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-navy">
+                    {section.title}
+                  </h1>
+                  {lastEdited && (
+                    <span className="flex items-center gap-1.5 text-xs text-gray-400 mt-1 whitespace-nowrap flex-shrink-0">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Updated {new Date(lastEdited).toLocaleDateString('en-GB', {
+                        day: 'numeric', month: 'short', year: 'numeric'
+                      })}
+                    </span>
+                  )}
+                </div>
 
                 {/* Notion content */}
                 <div ref={contentRef}>
-                  <NotionRenderer pageId={sectionId} />
+                  <NotionRenderer
+                    pageId={sectionId}
+                    onMetadata={({ lastEdited }) => setLastEdited(lastEdited)}
+                  />
                 </div>
 
-                {/* Next section */}
-                {nextSection && (
-                  <div className="mt-10 pt-6 border-t border-gray-100">
-                    <button
-                      onClick={() => navigate(`/section/${nextSection.section.id}`)}
-                      className="flex items-center justify-between w-full p-4 rounded-xl
-                        border border-gray-100 hover:border-accent hover:bg-blue-50
-                        transition-all group text-left"
-                    >
-                      <div>
-                        <p className="text-xs text-gray-400 mb-0.5">Next section</p>
-                        <p className="text-sm font-semibold text-navy group-hover:text-accent transition-colors">
-                          {nextSection.section.title}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-0.5">{nextSection.part.title}</p>
-                      </div>
-                      <svg className="w-5 h-5 text-gray-300 group-hover:text-accent
-                        group-hover:translate-x-0.5 transition-all flex-shrink-0 ml-4"
-                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                          d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
+                {/* Prev / Next navigation */}
+                {(prevSection || nextSection) && (
+                  <div className="mt-10 pt-6 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {prevSection ? (
+                      <button
+                        onClick={() => navigate(`/section/${prevSection.section.id}`)}
+                        className="flex items-center gap-3 p-4 rounded-xl border border-gray-100
+                          hover:border-accent hover:bg-blue-50 transition-all group text-left"
+                      >
+                        <svg className="w-5 h-5 text-gray-300 group-hover:text-accent
+                          group-hover:-translate-x-0.5 transition-all flex-shrink-0"
+                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                        <div className="min-w-0">
+                          <p className="text-xs text-gray-400 mb-0.5">Previous</p>
+                          <p className="text-sm font-semibold text-navy group-hover:text-accent transition-colors truncate">
+                            {prevSection.section.title}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-0.5 truncate">{prevSection.part.title}</p>
+                        </div>
+                      </button>
+                    ) : <div />}
+
+                    {nextSection ? (
+                      <button
+                        onClick={() => navigate(`/section/${nextSection.section.id}`)}
+                        className="flex items-center justify-between gap-3 p-4 rounded-xl border border-gray-100
+                          hover:border-accent hover:bg-blue-50 transition-all group text-left sm:col-start-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-xs text-gray-400 mb-0.5">Next</p>
+                          <p className="text-sm font-semibold text-navy group-hover:text-accent transition-colors truncate">
+                            {nextSection.section.title}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-0.5 truncate">{nextSection.part.title}</p>
+                        </div>
+                        <svg className="w-5 h-5 text-gray-300 group-hover:text-accent
+                          group-hover:translate-x-0.5 transition-all flex-shrink-0"
+                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    ) : <div />}
                   </div>
                 )}
               </div>
