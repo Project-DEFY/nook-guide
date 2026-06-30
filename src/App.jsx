@@ -15,6 +15,7 @@ export const AuthContext = createContext(null)
 export default function App() {
   const [session, setSession] = useState(undefined)  // undefined = loading
   const [userAccess, setUserAccess] = useState(null)
+  const [accessLoading, setAccessLoading] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -24,47 +25,39 @@ export default function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       if (session) loadAccess(session.user)
-      else setUserAccess(null)
+      else { setUserAccess(null); setAccessLoading(false) }
     })
     return () => subscription.unsubscribe()
   }, [])
 
   async function loadAccess(user) {
-    if (!user) { setUserAccess(null); return }
+    if (!user) { setUserAccess(null); setAccessLoading(false); return }
 
-    // First try by user_id
-    const { data: byId } = await supabase
-      .from('nook_guide_access')
-      .select('*')
-      .eq('user_id', user.id)
-      .single()
+    setAccessLoading(true)
+    const { data, error } = await supabase.rpc('get_my_nook_access')
 
-    if (byId) {
-      setUserAccess(byId)
+    if (error) {
+      console.error('Access check error:', error.message)
+      setAccessLoading(false)
       return
     }
 
-    // Try by email (first login — link user_id)
-    const { data: byEmail } = await supabase
-      .from('nook_guide_access')
-      .select('*')
-      .eq('email', user.email)
-      .single()
+    const row = data?.[0] ?? null
 
-    if (byEmail) {
-      // Update user_id so future lookups find the row directly
-      await supabase
-        .from('nook_guide_access')
-        .update({ user_id: user.id })
-        .eq('id', byEmail.id)
-      setUserAccess({ ...byEmail, user_id: user.id })
+    if (row) {
+      if (!row.user_id || row.user_id !== user.id) {
+        await supabase.rpc('link_nook_access_by_email')
+      }
+      setUserAccess(row)
+      setAccessLoading(false)
       return
     }
 
-    // No access row found — sign them out
+    // Confirmed: no access row exists — sign them out
     await supabase.auth.signOut()
     setUserAccess(null)
     setSession(null)
+    setAccessLoading(false)
   }
 
   if (session === undefined) {
@@ -76,7 +69,7 @@ export default function App() {
   }
 
   return (
-    <AuthContext.Provider value={{ session, userAccess, loadAccess: () => session && loadAccess(session.user) }}>
+    <AuthContext.Provider value={{ session, userAccess, accessLoading, loadAccess: () => session && loadAccess(session.user) }}>
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={session ? <Navigate to="/" /> : <Login />} />
