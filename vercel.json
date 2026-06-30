@@ -1,9 +1,13 @@
 {
+  "functions": {
+    "api/notion-fetch.js": { "maxDuration": 30 }
+  },
   "routes": [
     { "handle": "filesystem" },
     { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
+
 
 

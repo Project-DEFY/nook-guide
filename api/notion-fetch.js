@@ -1,4 +1,4 @@
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Content-Type', 'application/json')
 
@@ -51,7 +51,8 @@ function richTextToHtml(richText) {
   }).join('')
 }
 
-async function fetchBlocksHtml(blockId, notionKey) {
+async function fetchBlocksHtml(blockId, notionKey, depth = 0) {
+  if (depth > 4) return '' // prevent runaway recursion
   let html = ''
   let cursor = undefined
   let listState = null
@@ -77,18 +78,18 @@ async function fetchBlocksHtml(blockId, notionKey) {
       if (type === 'bulleted_list_item') {
         if (listState !== 'ul') { closeList(); html += '<ul>'; listState = 'ul' }
         html += `<li>${text}`
-        if (block.has_children) html += await fetchBlocksHtml(block.id, notionKey)
+        if (block.has_children) html += await fetchBlocksHtml(block.id, notionKey, depth + 1)
         html += '</li>'
       } else if (type === 'numbered_list_item') {
         if (listState !== 'ol') { closeList(); html += '<ol>'; listState = 'ol' }
         html += `<li>${text}`
-        if (block.has_children) html += await fetchBlocksHtml(block.id, notionKey)
+        if (block.has_children) html += await fetchBlocksHtml(block.id, notionKey, depth + 1)
         html += '</li>'
       } else {
         closeList()
         if (type === 'paragraph') {
-          html += `<p>${text}</p>`
-          if (block.has_children) html += await fetchBlocksHtml(block.id, notionKey)
+          html += text ? `<p>${text}</p>` : '<br>'
+          if (block.has_children) html += await fetchBlocksHtml(block.id, notionKey, depth + 1)
         } else if (type === 'heading_1') {
           html += `<h1>${text}</h1>`
         } else if (type === 'heading_2') {
@@ -109,12 +110,12 @@ async function fetchBlocksHtml(blockId, notionKey) {
         } else if (type === 'callout') {
           const emoji = content.icon?.emoji || '💡'
           html += `<blockquote><strong>${emoji}</strong> ${text}</blockquote>`
-          if (block.has_children) html += await fetchBlocksHtml(block.id, notionKey)
+          if (block.has_children) html += await fetchBlocksHtml(block.id, notionKey, depth + 1)
         } else if (type === 'table') {
           html += await renderTable(block.id, content.has_column_header, notionKey)
         } else if (type === 'toggle') {
           html += `<details><summary>${text}</summary>`
-          if (block.has_children) html += await fetchBlocksHtml(block.id, notionKey)
+          if (block.has_children) html += await fetchBlocksHtml(block.id, notionKey, depth + 1)
           html += '</details>'
         } else if (type === 'child_page') {
           html += `<p><em>→ ${content.title || 'Linked page'}</em></p>`
@@ -126,8 +127,9 @@ async function fetchBlocksHtml(blockId, notionKey) {
             if (caption) html += `<figcaption style="text-align:center;font-size:0.85em;color:#666;">${caption}</figcaption>`
           }
         } else if (type === 'column_list' || type === 'column') {
-          if (block.has_children) html += await fetchBlocksHtml(block.id, notionKey)
+          if (block.has_children) html += await fetchBlocksHtml(block.id, notionKey, depth + 1)
         }
+        // Unknown block types silently skipped
       }
     }
 
