@@ -1,33 +1,26 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { useContext } from 'react'
+import { AuthContext } from '../App'
 
 export default function AuthCallback() {
   const navigate = useNavigate()
+  const { session, userAccess, accessLoading } = useContext(AuthContext)
 
   useEffect(() => {
-    // Exchange the PKCE code for a session, then go home
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        console.error('Auth callback error:', error.message)
-        navigate('/login')
-      } else if (session) {
-        navigate('/')
-      } else {
-        // No session — might still be exchanging the code
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          if (event === 'SIGNED_IN' && session) {
-            subscription.unsubscribe()
-            navigate('/')
-          } else if (event === 'SIGNED_OUT' || (!session && event !== 'INITIAL_SESSION')) {
-            subscription.unsubscribe()
-            navigate('/login')
-          }
-        })
-        return () => subscription.unsubscribe()
-      }
-    })
-  }, [navigate])
+    // Wait until App.jsx has finished determining session and access
+    if (session === undefined) return   // still loading session
+    if (accessLoading) return           // still checking access table
+
+    if (session && userAccess) {
+      navigate('/', { replace: true })
+    } else if (session && !userAccess) {
+      // Session exists but no access row — show error, don't loop
+      navigate('/login?error=no_access', { replace: true })
+    } else {
+      navigate('/login', { replace: true })
+    }
+  }, [session, userAccess, accessLoading, navigate])
 
   return (
     <div className="min-h-screen bg-navy flex items-center justify-center">
