@@ -97,8 +97,9 @@ export default function Header() {
                       <span className={`mt-1 inline-block text-xs px-2 py-0.5 rounded-full font-medium
                         ${userAccess.nook_role === 'admin' ? 'bg-navy text-white' :
                           userAccess.nook_role === 'fellow' ? 'bg-accent text-white' :
+                          userAccess.nook_role === 'team_member' ? 'bg-emerald-600 text-white' :
                           'bg-amber text-white'}`}>
-                        {userAccess.nook_role}
+                        {{ admin: 'Admin', fellow: 'Fellow', partner: 'Partner', team_member: 'Team Member' }[userAccess.nook_role] ?? userAccess.nook_role}
                       </span>
                     )}
                   </div>

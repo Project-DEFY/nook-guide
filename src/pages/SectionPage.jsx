@@ -2,6 +2,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
 import Header from '../components/Header'
 import NotionRenderer from '../components/NotionRenderer'
+import DiscussionBoard from '../components/DiscussionBoard'
 import { findSection, GUIDE_STRUCTURE } from '../lib/guideStructure'
 
 export default function SectionPage() {
@@ -160,6 +161,9 @@ export default function SectionPage() {
                     onMetadata={({ lastEdited }) => setLastEdited(lastEdited)}
                   />
                 </div>
+
+                {/* Community discussion */}
+                <DiscussionBoard pageId={sectionId} />
 
                 {/* Prev / Next navigation */}
                 {(prevSection || nextSection) && (
