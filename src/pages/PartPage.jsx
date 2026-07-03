@@ -1,6 +1,15 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import Header from '../components/Header'
 import { GUIDE_STRUCTURE } from '../lib/guideStructure'
+import { SOP_RESOURCES } from '../data/sopResources'
+
+const MIME_CONFIG = {
+  'application/vnd.google-apps.spreadsheet': { label: 'Sheet', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
+  'application/vnd.google-apps.document':    { label: 'Doc',   color: 'text-blue-600 bg-blue-50 border-blue-200' },
+  'application/pdf':                          { label: 'PDF',   color: 'text-orange-600 bg-orange-50 border-orange-200' },
+  'application/vnd.google-apps.presentation':{ label: 'Slides',color: 'text-amber-600 bg-amber-50 border-amber-200' },
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': { label: 'Sheet', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
+}
 
 export default function PartPage() {
   const { partId } = useParams()
@@ -81,6 +90,7 @@ export default function PartPage() {
                 section={section}
                 part={part}
                 index={idx}
+                resources={SOP_RESOURCES[section.id] || []}
                 onClick={() => navigate(`/section/${section.id}`)}
               />
             ))}
@@ -91,7 +101,11 @@ export default function PartPage() {
   )
 }
 
-function SectionCard({ section, part, index, onClick }) {
+function SectionCard({ section, part, index, resources, onClick }) {
+  const MAX_SHOWN = 3
+  const visible = resources.slice(0, MAX_SHOWN)
+  const overflow = resources.length - MAX_SHOWN
+
   return (
     <button
       onClick={onClick}
@@ -131,6 +145,43 @@ function SectionCard({ section, part, index, onClick }) {
           <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 mt-1">
             {section.description}
           </p>
+        )}
+
+        {visible.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-3" onClick={e => e.stopPropagation()}>
+            {visible.map((r, i) => {
+              const cfg = MIME_CONFIG[r.mimeType] || { label: 'File', color: 'text-gray-600 bg-gray-50 border-gray-200' }
+              const shortName = r.name
+                .replace(/\s*[-—]\s*(Template|Filled Sample|Guide).*$/i, '')
+                .replace(/\s*\(.*\)$/, '')
+                .trim()
+              return (
+                <a
+                  key={i}
+                  href={r.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={r.name}
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-medium
+                    transition-all hover:shadow-sm hover:-translate-y-0.5 active:scale-95
+                    ${cfg.color}`}
+                >
+                  <span className="opacity-60 text-xs">{cfg.label}</span>
+                  <span className="max-w-[120px] truncate">{shortName}</span>
+                  <svg className="w-2.5 h-2.5 opacity-40 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              )
+            })}
+            {overflow > 0 && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium
+                text-gray-400 bg-gray-50 border-gray-200">
+                +{overflow} more
+              </span>
+            )}
+          </div>
         )}
 
         <div className="flex items-center justify-end mt-3">
