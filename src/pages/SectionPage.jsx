@@ -3,6 +3,8 @@ import { useState, useEffect, useRef } from 'react'
 import Header from '../components/Header'
 import NotionRenderer from '../components/NotionRenderer'
 import DiscussionBoard from '../components/DiscussionBoard'
+import SOPScenarios from '../components/SOPScenarios'
+import SOPResources from '../components/SOPResources'
 import { findSection, GUIDE_STRUCTURE } from '../lib/guideStructure'
 
 export default function SectionPage() {
@@ -154,6 +156,9 @@ export default function SectionPage() {
                   )}
                 </div>
 
+                {/* Scenario buttons */}
+                <SOPScenarios pageId={sectionId} />
+
                 {/* Notion content */}
                 <div ref={contentRef}>
                   <NotionRenderer
@@ -161,6 +166,9 @@ export default function SectionPage() {
                     onMetadata={({ lastEdited }) => setLastEdited(lastEdited)}
                   />
                 </div>
+
+                {/* Resources & Tools */}
+                <SOPResources pageId={sectionId} />
 
                 {/* Community discussion */}
                 <DiscussionBoard pageId={sectionId} />
