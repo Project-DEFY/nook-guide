@@ -179,19 +179,28 @@ export default function SectionPage() {
                     {prevSection ? (
                       <button
                         onClick={() => navigate(`/section/${prevSection.section.id}`)}
-                        className="flex items-center gap-3 p-4 rounded-xl border border-gray-100
-                          hover:border-accent hover:bg-blue-50 transition-all group text-left"
+                        className="flex items-center gap-3 p-4 rounded-xl border-2 transition-all group text-left"
+                        style={{
+                          borderColor: `${prevSection.part.color}40`,
+                          backgroundColor: `${prevSection.part.color}08`,
+                        }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.borderColor = prevSection.part.color
+                          e.currentTarget.style.backgroundColor = `${prevSection.part.color}15`
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.borderColor = `${prevSection.part.color}40`
+                          e.currentTarget.style.backgroundColor = `${prevSection.part.color}08`
+                        }}
                       >
-                        <svg className="w-5 h-5 text-gray-300 group-hover:text-accent
-                          group-hover:-translate-x-0.5 transition-all flex-shrink-0"
+                        <svg className="w-5 h-5 flex-shrink-0 group-hover:-translate-x-0.5 transition-transform"
+                          style={{ color: prevSection.part.color }}
                           fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                         </svg>
                         <div className="min-w-0">
-                          <p className="text-xs text-gray-400 mb-0.5">Previous</p>
-                          <p className="text-sm font-semibold text-navy group-hover:text-accent transition-colors truncate">
-                            {prevSection.section.title}
-                          </p>
+                          <p className="text-xs font-medium mb-0.5" style={{ color: prevSection.part.color }}>← Previous</p>
+                          <p className="text-sm font-semibold text-navy truncate">{prevSection.section.title}</p>
                           <p className="text-xs text-gray-400 mt-0.5 truncate">{prevSection.part.title}</p>
                         </div>
                       </button>
@@ -200,18 +209,27 @@ export default function SectionPage() {
                     {nextSection ? (
                       <button
                         onClick={() => navigate(`/section/${nextSection.section.id}`)}
-                        className="flex items-center justify-between gap-3 p-4 rounded-xl border border-gray-100
-                          hover:border-accent hover:bg-blue-50 transition-all group text-left sm:col-start-2"
+                        className="flex items-center justify-between gap-3 p-4 rounded-xl border-2 transition-all group text-left sm:col-start-2"
+                        style={{
+                          borderColor: `${nextSection.part.color}40`,
+                          backgroundColor: `${nextSection.part.color}08`,
+                        }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.borderColor = nextSection.part.color
+                          e.currentTarget.style.backgroundColor = `${nextSection.part.color}15`
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.borderColor = `${nextSection.part.color}40`
+                          e.currentTarget.style.backgroundColor = `${nextSection.part.color}08`
+                        }}
                       >
                         <div className="min-w-0">
-                          <p className="text-xs text-gray-400 mb-0.5">Next</p>
-                          <p className="text-sm font-semibold text-navy group-hover:text-accent transition-colors truncate">
-                            {nextSection.section.title}
-                          </p>
+                          <p className="text-xs font-medium mb-0.5" style={{ color: nextSection.part.color }}>Next →</p>
+                          <p className="text-sm font-semibold text-navy truncate">{nextSection.section.title}</p>
                           <p className="text-xs text-gray-400 mt-0.5 truncate">{nextSection.part.title}</p>
                         </div>
-                        <svg className="w-5 h-5 text-gray-300 group-hover:text-accent
-                          group-hover:translate-x-0.5 transition-all flex-shrink-0"
+                        <svg className="w-5 h-5 flex-shrink-0 group-hover:translate-x-0.5 transition-transform"
+                          style={{ color: nextSection.part.color }}
                           fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>

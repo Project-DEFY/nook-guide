@@ -42,14 +42,11 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center h-14 gap-4">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-            <div className="w-7 h-7 bg-navy rounded-md flex items-center justify-center">
-              <span className="text-white text-xs font-bold tracking-tight">D</span>
-            </div>
-            <div className="flex flex-col leading-none">
-              <span className="text-xs font-bold text-navy tracking-widest">DEFY</span>
-              <span className="text-xs text-gray-500 font-medium">Nook Guide</span>
-            </div>
+          <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
+            <img src="/defy_logo.png" alt="Project DEFY" className="h-8 w-auto" />
+            <span className="text-xs font-semibold text-gray-400 border-l border-gray-200 pl-2.5 leading-none">
+              Nook Guide
+            </span>
           </Link>
 
           {/* Desktop search */}
