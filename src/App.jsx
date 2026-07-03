@@ -9,6 +9,7 @@ import PartPage from './pages/PartPage'
 import SectionPage from './pages/SectionPage'
 import SearchPage from './pages/SearchPage'
 import AdminPage from './pages/AdminPage'
+import GroundingPage from './pages/GroundingPage'
 
 export const AuthContext = createContext(null)
 
@@ -79,6 +80,7 @@ export default function App() {
           <Route path="/section/:sectionId" element={<ProtectedRoute><SectionPage /></ProtectedRoute>} />
           <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute adminOnly><AdminPage /></ProtectedRoute>} />
+          <Route path="/grounding" element={<ProtectedRoute><GroundingPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </BrowserRouter>

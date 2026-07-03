@@ -29,7 +29,7 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
     )
   }
 
-  if (adminOnly && userAccess.nook_role !== 'admin') {
+  if (adminOnly && !['admin', 'co_admin'].includes(userAccess.nook_role)) {
     return <Navigate to="/" replace />
   }
 

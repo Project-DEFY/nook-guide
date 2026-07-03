@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useContext } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { AuthContext } from '../App'
 import SearchBar from './SearchBar'
@@ -10,6 +10,7 @@ export default function Header() {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const dropdownRef = useRef(null)
   const navigate = useNavigate()
+  const location = useLocation()
 
   useEffect(() => {
     function handleClick(e) {
@@ -36,6 +37,8 @@ export default function Header() {
     .slice(0, 2) || email[0]?.toUpperCase() || '?'
 
   const isAdmin = userAccess?.nook_role === 'admin'
+  const isCoAdmin = userAccess?.nook_role === 'co_admin'
+  const showGrounding = userAccess && !['partner'].includes(userAccess.nook_role)
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
@@ -48,6 +51,27 @@ export default function Header() {
               Nook Guide
             </span>
           </Link>
+
+          {/* Grounding nav link */}
+          {showGrounding && (
+            <Link
+              to="/grounding"
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                text-sm font-medium transition-colors flex-shrink-0 relative
+                ${location.pathname === '/grounding'
+                  ? 'bg-teal-50 text-teal-700'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M12 3v1m0 16v1M4.22 4.22l.707.707m12.728 12.728l.707.707M1 12h1m18 0h1M4.22 19.78l.707-.707M18.364 5.636l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+              </svg>
+              Grounding
+              {userAccess?.nook_role === 'new_fellow' && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-teal-500 rounded-full" />
+              )}
+            </Link>
+          )}
 
           {/* Desktop search */}
           <div className="hidden sm:flex flex-1 justify-center px-4">
@@ -92,15 +116,34 @@ export default function Header() {
                     <p className="text-xs text-gray-500 truncate">{email}</p>
                     {userAccess?.nook_role && (
                       <span className={`mt-1 inline-block text-xs px-2 py-0.5 rounded-full font-medium
-                        ${userAccess.nook_role === 'admin' ? 'bg-navy text-white' :
-                          userAccess.nook_role === 'fellow' ? 'bg-accent text-white' :
+                        ${['admin','co_admin'].includes(userAccess.nook_role) ? 'bg-navy text-white' :
+                          ['fellow','senior_fellow'].includes(userAccess.nook_role) ? 'bg-accent text-white' :
+                          userAccess.nook_role === 'new_fellow' ? 'bg-teal-500 text-white' :
+                          userAccess.nook_role === 'hopper' ? 'bg-purple-600 text-white' :
                           userAccess.nook_role === 'team_member' ? 'bg-emerald-600 text-white' :
                           'bg-amber text-white'}`}>
-                        {{ admin: 'Admin', fellow: 'Fellow', partner: 'Partner', team_member: 'Team Member' }[userAccess.nook_role] ?? userAccess.nook_role}
+                        {{
+                          admin: 'Admin', co_admin: 'Co-Admin',
+                          fellow: 'Fellow', senior_fellow: 'Senior Fellow',
+                          new_fellow: 'New Fellow', hopper: 'Hopper',
+                          partner: 'Partner', team_member: 'Team Member'
+                        }[userAccess.nook_role] ?? userAccess.nook_role}
                       </span>
                     )}
                   </div>
-                  {isAdmin && (
+                  {showGrounding && (
+                    <Link
+                      to="/grounding"
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      Grounding
+                      {userAccess?.nook_role === 'new_fellow' && (
+                        <span className="w-1.5 h-1.5 bg-teal-500 rounded-full" />
+                      )}
+                    </Link>
+                  )}
+                  {(isAdmin || isCoAdmin) && (
                     <Link
                       to="/admin"
                       onClick={() => setDropdownOpen(false)}
