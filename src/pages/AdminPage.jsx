@@ -56,9 +56,10 @@ export default function AdminPage() {
       },
     })
     if (error) {
-      alert(error.message.includes('rate limit')
+      const errMsg = error.message || error.error_description || JSON.stringify(error)
+      alert(errMsg.includes('rate limit')
         ? 'Email rate limit reached. Wait ~1 hour or set up a custom SMTP server in Supabase.'
-        : `Failed to resend: ${error.message}`)
+        : `Failed to resend: ${errMsg}`)
     }
     setActionLoading(null)
   }
@@ -340,10 +341,11 @@ function InviteModal({ viewerRole, assignableRoles, onClose, onDone }) {
     if (otpError) {
       // Roll back the access row so the admin can retry cleanly
       await supabase.from('nook_guide_access').delete().eq('email', email).is('user_id', null)
-      const isRateLimit = otpError.message.toLowerCase().includes('rate limit')
+      const errMsg = otpError.message || otpError.error_description || JSON.stringify(otpError)
+      const isRateLimit = errMsg.toLowerCase().includes('rate limit')
       setError(isRateLimit
         ? 'Email rate limit reached — Supabase allows ~4 emails/hour on the free tier. Wait an hour and try again, or set up a custom SMTP server in Supabase (Authentication → SMTP Settings).'
-        : `Couldn't send invite email: ${otpError.message}`)
+        : `Couldn't send invite email: ${errMsg}`)
       setLoading(false)
       return
     }
