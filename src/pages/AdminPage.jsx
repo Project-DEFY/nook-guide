@@ -339,9 +339,15 @@ function InviteModal({ viewerRole, assignableRoles, onClose, onDone }) {
     })
 
     if (otpError) {
+      console.error('OTP error full object:', otpError)
+      console.error('OTP error name:', otpError?.name)
+      console.error('OTP error message:', otpError?.message)
+      console.error('OTP error status:', otpError?.status)
       // Roll back the access row so the admin can retry cleanly
       await supabase.from('nook_guide_access').delete().eq('email', email).is('user_id', null)
-      const errMsg = otpError.message || otpError.error_description || JSON.stringify(otpError)
+      const errMsg = otpError.name
+        ? `${otpError.name}: ${otpError.message || '(no message)'}`
+        : otpError.message || otpError.error_description || JSON.stringify(otpError) || 'Unknown error'
       const isRateLimit = errMsg.toLowerCase().includes('rate limit')
       setError(isRateLimit
         ? 'Email rate limit reached — Supabase allows ~4 emails/hour on the free tier. Wait an hour and try again, or set up a custom SMTP server in Supabase (Authentication → SMTP Settings).'
