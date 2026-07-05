@@ -23,18 +23,46 @@ function getRoleConfig(role) {
   return ALL_ROLES.find(r => r.value === role) || { label: role, color: 'bg-gray-100 text-gray-600' }
 }
 
+function timeAgo(dateStr) {
+  if (!dateStr) return null
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const days = Math.floor(diff / 86400000)
+  if (days === 0) return 'Today'
+  if (days === 1) return 'Yesterday'
+  if (days < 7) return `${days}d ago`
+  if (days < 30) return `${Math.floor(days / 7)}w ago`
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`
+  return `${Math.floor(days / 365)}y ago`
+}
+
+function getActivityStatus(row) {
+  if (!row.user_id) return { label: 'Pending',         dot: 'bg-amber-400',  text: 'text-amber-700', bg: 'bg-amber-50' }
+  if (!row.last_sign_in_at) return { label: 'Never signed in', dot: 'bg-gray-300',  text: 'text-gray-500',  bg: 'bg-gray-50' }
+  const days = Math.floor((Date.now() - new Date(row.last_sign_in_at).getTime()) / 86400000)
+  if (days <= 7)  return { label: 'Active',   dot: 'bg-green-500', text: 'text-green-700', bg: 'bg-green-50' }
+  if (days <= 30) return { label: 'Recent',   dot: 'bg-blue-400',  text: 'text-blue-700',  bg: 'bg-blue-50' }
+  return           { label: 'Inactive',  dot: 'bg-red-400',   text: 'text-red-600',   bg: 'bg-red-50' }
+}
+
 export default function AdminPage() {
   const { session, userAccess } = useContext(AuthContext)
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [actionLoading, setActionLoading] = useState(null)
+  const [activeTab, setActiveTab] = useState('users')
+  const [analyticsData, setAnalyticsData] = useState([])
+  const [analyticsLoading, setAnalyticsLoading] = useState(false)
 
   const isAdmin = userAccess?.nook_role === 'admin'
   const isCoAdmin = userAccess?.nook_role === 'co_admin'
   const viewerRole = userAccess?.nook_role
 
   useEffect(() => { fetchUsers() }, [])
+
+  useEffect(() => {
+    if (activeTab === 'analytics') fetchAnalytics()
+  }, [activeTab])
 
   async function fetchUsers() {
     setLoading(true)
@@ -44,6 +72,13 @@ export default function AdminPage() {
       .order('created_at', { ascending: false })
     if (data) setUsers(data)
     setLoading(false)
+  }
+
+  async function fetchAnalytics() {
+    setAnalyticsLoading(true)
+    const { data } = await supabase.rpc('get_user_analytics')
+    if (data) setAnalyticsData(data)
+    setAnalyticsLoading(false)
   }
 
   async function handleResendInvite(email) {
@@ -93,17 +128,14 @@ export default function AdminPage() {
     setActionLoading(null)
   }
 
-  // Can the viewer edit this target user?
   function canEdit(targetUser) {
     if (isAdmin) return true
     if (isCoAdmin) {
-      // Co-admin cannot touch admins or co-admins
       return targetUser.nook_role !== 'admin' && targetUser.nook_role !== 'co_admin'
     }
     return false
   }
 
-  // Which roles can the viewer assign?
   function assignableRoles() {
     if (isAdmin) return ALL_ROLES
     if (isCoAdmin) return ALL_ROLES.filter(r => CO_ADMIN_ASSIGNABLE.includes(r.value))
@@ -115,16 +147,24 @@ export default function AdminPage() {
     return src.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
   }
 
-  // Stats — show interesting groupings
+  // Users tab stats
   const fellowCount = users.filter(u => ['new_fellow','fellow','senior_fellow'].includes(u.nook_role)).length
   const hopperCount = users.filter(u => u.nook_role === 'hopper').length
-  const adminCount = users.filter(u => ['admin','co_admin'].includes(u.nook_role)).length
+  const adminCount  = users.filter(u => ['admin','co_admin'].includes(u.nook_role)).length
+
+  // Analytics tab stats
+  const activeUsers   = analyticsData.filter(u => u.last_sign_in_at &&
+    (Date.now() - new Date(u.last_sign_in_at).getTime()) / 86400000 <= 7).length
+  const neverSignedIn = analyticsData.filter(u => u.user_id && !u.last_sign_in_at).length
+  const pendingInvites = analyticsData.filter(u => !u.user_id).length
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
       <main className="pt-14">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+          {/* Header row */}
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold text-navy">
@@ -144,147 +184,254 @@ export default function AdminPage() {
             </button>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="bg-white rounded-xl border border-gray-100 p-4">
-              <p className="text-2xl font-bold text-navy">{fellowCount}</p>
-              <p className="text-sm text-gray-500">Fellows (all)</p>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-100 p-4">
-              <p className="text-2xl font-bold text-navy">{hopperCount}</p>
-              <p className="text-sm text-gray-500">Hoppers</p>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-100 p-4">
-              <p className="text-2xl font-bold text-navy">{adminCount}</p>
-              <p className="text-sm text-gray-500">Admins</p>
-            </div>
+          {/* Tab bar */}
+          <div className="flex border-b border-gray-200 mb-6">
+            {[
+              { id: 'users',     label: 'Users' },
+              { id: 'analytics', label: 'Analytics' },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-5 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px
+                  ${activeTab === tab.id
+                    ? 'border-navy text-navy'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
 
-          {/* Users table */}
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-            {loading ? (
-              <LoadingSpinner text="Loading users..." />
-            ) : users.length === 0 ? (
-              <div className="p-8 text-center text-gray-400">No users yet.</div>
-            ) : (
-              <div className="divide-y divide-gray-50">
-                {users.map(user => {
-                  const editable = canEdit(user)
-                  const isSelf = user.user_id === session?.user?.id
-                  const cfg = getRoleConfig(user.nook_role)
-                  const cycleNum = user.current_cycle_number ?? 0
-
-                  return (
-                    <div key={user.id} className="flex items-center gap-4 px-5 py-4">
-                      {/* Avatar */}
-                      <div className="w-9 h-9 rounded-full bg-navy flex items-center
-                        justify-center flex-shrink-0">
-                        <span className="text-white text-xs font-semibold">
-                          {getInitials(user.full_name, user.email)}
-                        </span>
-                      </div>
-
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {user.full_name || '—'}
-                        </p>
-                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                        {user.nook_location && (
-                          <p className="text-xs text-gray-400">{user.nook_location}</p>
-                        )}
-                      </div>
-
-                      {/* Role badge */}
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full
-                          ${cfg.color}`}>
-                          {cfg.label}
-                        </span>
-                        {!user.user_id && (
-                          <button
-                            onClick={() => handleResendInvite(user.email)}
-                            disabled={actionLoading === user.email + '-resend'}
-                            title="Resend invite email"
-                            className="text-xs text-amber font-medium bg-amber/10
-                              px-2 py-0.5 rounded-full hover:bg-amber/20 transition-colors
-                              disabled:opacity-50 flex items-center gap-1">
-                            {actionLoading === user.email + '-resend' ? '...' : '⏳ Pending — Resend'}
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Cycle counter (fellows only) */}
-                      {['new_fellow','fellow','senior_fellow'].includes(user.nook_role) && (
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <span className="text-xs text-gray-400 mr-0.5">Cycle</span>
-                          {editable && (
-                            <button
-                              onClick={() => handleCycleChange(user.id, -1, cycleNum)}
-                              disabled={cycleNum === 0 || actionLoading === user.id + '-cycle'}
-                              className="w-5 h-5 rounded text-gray-400 hover:text-gray-600
-                                hover:bg-gray-100 transition-colors disabled:opacity-30
-                                flex items-center justify-center text-xs font-bold"
-                            >−</button>
-                          )}
-                          <span className="text-sm font-semibold text-navy w-4 text-center">
-                            {cycleNum}
-                          </span>
-                          {editable && (
-                            <button
-                              onClick={() => handleCycleChange(user.id, 1, cycleNum)}
-                              disabled={actionLoading === user.id + '-cycle'}
-                              className="w-5 h-5 rounded text-gray-400 hover:text-gray-600
-                                hover:bg-gray-100 transition-colors disabled:opacity-30
-                                flex items-center justify-center text-xs font-bold"
-                            >+</button>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        {editable ? (
-                          <select
-                            value={user.nook_role}
-                            onChange={e => handleRoleChange(user.id, e.target.value)}
-                            disabled={actionLoading === user.id + '-role' || isSelf}
-                            className="text-xs border border-gray-200 rounded-lg px-2 py-1.5
-                              text-gray-600 focus:outline-none focus:ring-1 focus:ring-accent
-                              disabled:opacity-50"
-                          >
-                            {assignableRoles().map(r => (
-                              <option key={r.value} value={r.value}>{r.label}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <span className="text-xs text-gray-300 px-2 py-1.5 italic">
-                            {isCoAdmin ? 'Admin — no edit' : ''}
-                          </span>
-                        )}
-
-                        {isAdmin && (
-                          <button
-                            onClick={() => handleDelete(user.id)}
-                            disabled={actionLoading === user.id + '-delete' || isSelf}
-                            className="p-1.5 rounded-lg hover:bg-red-50 text-gray-300
-                              hover:text-red-500 transition-colors disabled:opacity-40"
-                            title="Remove access"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor"
-                              viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
+          {/* ── USERS TAB ── */}
+          {activeTab === 'users' && (
+            <>
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="bg-white rounded-xl border border-gray-100 p-4">
+                  <p className="text-2xl font-bold text-navy">{fellowCount}</p>
+                  <p className="text-sm text-gray-500">Fellows (all)</p>
+                </div>
+                <div className="bg-white rounded-xl border border-gray-100 p-4">
+                  <p className="text-2xl font-bold text-navy">{hopperCount}</p>
+                  <p className="text-sm text-gray-500">Hoppers</p>
+                </div>
+                <div className="bg-white rounded-xl border border-gray-100 p-4">
+                  <p className="text-2xl font-bold text-navy">{adminCount}</p>
+                  <p className="text-sm text-gray-500">Admins</p>
+                </div>
               </div>
-            )}
-          </div>
+
+              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                {loading ? (
+                  <LoadingSpinner text="Loading users..." />
+                ) : users.length === 0 ? (
+                  <div className="p-8 text-center text-gray-400">No users yet.</div>
+                ) : (
+                  <div className="divide-y divide-gray-50">
+                    {users.map(user => {
+                      const editable = canEdit(user)
+                      const isSelf   = user.user_id === session?.user?.id
+                      const cfg      = getRoleConfig(user.nook_role)
+                      const cycleNum = user.current_cycle_number ?? 0
+
+                      return (
+                        <div key={user.id} className="flex items-center gap-4 px-5 py-4">
+                          <div className="w-9 h-9 rounded-full bg-navy flex items-center
+                            justify-center flex-shrink-0">
+                            <span className="text-white text-xs font-semibold">
+                              {getInitials(user.full_name, user.email)}
+                            </span>
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {user.full_name || '—'}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                            {user.nook_location && (
+                              <p className="text-xs text-gray-400">{user.nook_location}</p>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${cfg.color}`}>
+                              {cfg.label}
+                            </span>
+                            {!user.user_id && (
+                              <button
+                                onClick={() => handleResendInvite(user.email)}
+                                disabled={actionLoading === user.email + '-resend'}
+                                title="Resend invite email"
+                                className="text-xs text-amber font-medium bg-amber/10
+                                  px-2 py-0.5 rounded-full hover:bg-amber/20 transition-colors
+                                  disabled:opacity-50 flex items-center gap-1">
+                                {actionLoading === user.email + '-resend' ? '...' : '⏳ Pending — Resend'}
+                              </button>
+                            )}
+                          </div>
+
+                          {['new_fellow','fellow','senior_fellow'].includes(user.nook_role) && (
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <span className="text-xs text-gray-400 mr-0.5">Cycle</span>
+                              {editable && (
+                                <button
+                                  onClick={() => handleCycleChange(user.id, -1, cycleNum)}
+                                  disabled={cycleNum === 0 || actionLoading === user.id + '-cycle'}
+                                  className="w-5 h-5 rounded text-gray-400 hover:text-gray-600
+                                    hover:bg-gray-100 transition-colors disabled:opacity-30
+                                    flex items-center justify-center text-xs font-bold"
+                                >−</button>
+                              )}
+                              <span className="text-sm font-semibold text-navy w-4 text-center">
+                                {cycleNum}
+                              </span>
+                              {editable && (
+                                <button
+                                  onClick={() => handleCycleChange(user.id, 1, cycleNum)}
+                                  disabled={actionLoading === user.id + '-cycle'}
+                                  className="w-5 h-5 rounded text-gray-400 hover:text-gray-600
+                                    hover:bg-gray-100 transition-colors disabled:opacity-30
+                                    flex items-center justify-center text-xs font-bold"
+                                >+</button>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            {editable ? (
+                              <select
+                                value={user.nook_role}
+                                onChange={e => handleRoleChange(user.id, e.target.value)}
+                                disabled={actionLoading === user.id + '-role' || isSelf}
+                                className="text-xs border border-gray-200 rounded-lg px-2 py-1.5
+                                  text-gray-600 focus:outline-none focus:ring-1 focus:ring-accent
+                                  disabled:opacity-50"
+                              >
+                                {assignableRoles().map(r => (
+                                  <option key={r.value} value={r.value}>{r.label}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span className="text-xs text-gray-300 px-2 py-1.5 italic">
+                                {isCoAdmin ? 'Admin — no edit' : ''}
+                              </span>
+                            )}
+
+                            {isAdmin && (
+                              <button
+                                onClick={() => handleDelete(user.id)}
+                                disabled={actionLoading === user.id + '-delete' || isSelf}
+                                className="p-1.5 rounded-lg hover:bg-red-50 text-gray-300
+                                  hover:text-red-500 transition-colors disabled:opacity-40"
+                                title="Remove access"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* ── ANALYTICS TAB ── */}
+          {activeTab === 'analytics' && (
+            <>
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="bg-white rounded-xl border border-gray-100 p-4">
+                  <p className="text-2xl font-bold text-green-600">{activeUsers}</p>
+                  <p className="text-sm text-gray-500">Active (last 7 days)</p>
+                </div>
+                <div className="bg-white rounded-xl border border-gray-100 p-4">
+                  <p className="text-2xl font-bold text-gray-400">{neverSignedIn}</p>
+                  <p className="text-sm text-gray-500">Never signed in</p>
+                </div>
+                <div className="bg-white rounded-xl border border-gray-100 p-4">
+                  <p className="text-2xl font-bold text-amber-500">{pendingInvites}</p>
+                  <p className="text-sm text-gray-500">Invite pending</p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                {analyticsLoading ? (
+                  <LoadingSpinner text="Loading analytics..." />
+                ) : analyticsData.length === 0 ? (
+                  <div className="p-8 text-center text-gray-400">No data yet.</div>
+                ) : (
+                  <>
+                    {/* Table header */}
+                    <div className="hidden sm:grid sm:grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 px-5 py-3
+                      border-b border-gray-100 bg-gray-50/80">
+                      {['User', 'Role', 'Joined', 'Last sign-in', 'Status'].map(h => (
+                        <span key={h} className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                          {h}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="divide-y divide-gray-50">
+                      {analyticsData.map(row => {
+                        const status = getActivityStatus(row)
+                        const cfg    = getRoleConfig(row.nook_role)
+                        return (
+                          <div key={row.id}
+                            className="sm:grid sm:grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 px-5 py-3.5
+                              flex flex-col items-start sm:items-center hover:bg-gray-50/50 transition-colors">
+
+                            {/* User */}
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-8 h-8 rounded-full bg-navy flex-shrink-0
+                                flex items-center justify-center">
+                                <span className="text-white text-xs font-semibold">
+                                  {getInitials(row.full_name, row.email)}
+                                </span>
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">
+                                  {row.full_name || '—'}
+                                </p>
+                                <p className="text-xs text-gray-400 truncate">{row.email}</p>
+                              </div>
+                            </div>
+
+                            {/* Role */}
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${cfg.color}`}>
+                              {cfg.label}
+                            </span>
+
+                            {/* Joined */}
+                            <span className="text-xs text-gray-500">
+                              {timeAgo(row.joined_at) || '—'}
+                            </span>
+
+                            {/* Last sign-in */}
+                            <span className="text-xs text-gray-500">
+                              {row.last_sign_in_at ? timeAgo(row.last_sign_in_at) : '—'}
+                            </span>
+
+                            {/* Status pill */}
+                            <div className={`flex items-center gap-1.5 text-xs font-medium
+                              px-2.5 py-1 rounded-full w-fit ${status.bg} ${status.text}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${status.dot}`} />
+                              {status.label}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
+          )}
+
         </div>
       </main>
 
@@ -339,18 +486,13 @@ function InviteModal({ viewerRole, assignableRoles, onClose, onDone }) {
     })
 
     if (otpError) {
-      console.error('OTP error full object:', otpError)
-      console.error('OTP error name:', otpError?.name)
-      console.error('OTP error message:', otpError?.message)
-      console.error('OTP error status:', otpError?.status)
-      // Roll back the access row so the admin can retry cleanly
       await supabase.from('nook_guide_access').delete().eq('email', email).is('user_id', null)
       const errMsg = otpError.name
         ? `${otpError.name}: ${otpError.message || '(no message)'}`
         : otpError.message || otpError.error_description || JSON.stringify(otpError) || 'Unknown error'
       const isRateLimit = errMsg.toLowerCase().includes('rate limit')
       setError(isRateLimit
-        ? 'Email rate limit reached — Supabase allows ~4 emails/hour on the free tier. Wait an hour and try again, or set up a custom SMTP server in Supabase (Authentication → SMTP Settings).'
+        ? 'Email rate limit reached — wait an hour and try again, or set up a custom SMTP server in Supabase (Authentication → SMTP Settings).'
         : `Couldn't send invite email: ${errMsg}`)
       setLoading(false)
       return
