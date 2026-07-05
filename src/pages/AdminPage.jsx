@@ -46,6 +46,23 @@ export default function AdminPage() {
     setLoading(false)
   }
 
+  async function handleResendInvite(email) {
+    setActionLoading(email + '-resend')
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+    if (error) {
+      alert(error.message.includes('rate limit')
+        ? 'Email rate limit reached. Wait ~1 hour or set up a custom SMTP server in Supabase.'
+        : `Failed to resend: ${error.message}`)
+    }
+    setActionLoading(null)
+  }
+
   async function handleRoleChange(userId, newRole) {
     setActionLoading(userId + '-role')
     await supabase
@@ -184,10 +201,15 @@ export default function AdminPage() {
                           {cfg.label}
                         </span>
                         {!user.user_id && (
-                          <span className="text-xs text-amber font-medium bg-amber/10
-                            px-2 py-0.5 rounded-full">
-                            Pending
-                          </span>
+                          <button
+                            onClick={() => handleResendInvite(user.email)}
+                            disabled={actionLoading === user.email + '-resend'}
+                            title="Resend invite email"
+                            className="text-xs text-amber font-medium bg-amber/10
+                              px-2 py-0.5 rounded-full hover:bg-amber/20 transition-colors
+                              disabled:opacity-50 flex items-center gap-1">
+                            {actionLoading === user.email + '-resend' ? '...' : '⏳ Pending — Resend'}
+                          </button>
                         )}
                       </div>
 
@@ -316,7 +338,12 @@ function InviteModal({ viewerRole, assignableRoles, onClose, onDone }) {
     })
 
     if (otpError) {
-      setError(`Access row created but magic link failed: ${otpError.message}`)
+      // Roll back the access row so the admin can retry cleanly
+      await supabase.from('nook_guide_access').delete().eq('email', email).is('user_id', null)
+      const isRateLimit = otpError.message.toLowerCase().includes('rate limit')
+      setError(isRateLimit
+        ? 'Email rate limit reached — Supabase allows ~4 emails/hour on the free tier. Wait an hour and try again, or set up a custom SMTP server in Supabase (Authentication → SMTP Settings).'
+        : `Couldn't send invite email: ${otpError.message}`)
       setLoading(false)
       return
     }
