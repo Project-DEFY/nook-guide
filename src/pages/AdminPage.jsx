@@ -53,6 +53,10 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('users')
   const [analyticsData, setAnalyticsData] = useState([])
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
+  const [trainingModules, setTrainingModules] = useState([])
+  const [allAssignments, setAllAssignments] = useState({})  // { [userId]: Set<moduleId> }
+  const [trainingLoading, setTrainingLoading] = useState(false)
+  const [assigningUser, setAssigningUser] = useState(null)
 
   const isAdmin = userAccess?.nook_role === 'admin'
   const isCoAdmin = userAccess?.nook_role === 'co_admin'
@@ -62,7 +66,39 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (activeTab === 'analytics') fetchAnalytics()
+    if (activeTab === 'training') fetchTrainingData()
   }, [activeTab])
+
+  async function fetchTrainingData() {
+    setTrainingLoading(true)
+    const [modRes, assignRes] = await Promise.all([
+      supabase.from('grounding_modules').select('id, phase, phase_name, order_in_phase, title').order('phase').order('order_in_phase'),
+      supabase.from('grounding_assignments').select('assigned_to, module_id'),
+    ])
+    setTrainingModules(modRes.data || [])
+    const amap = {}
+    for (const a of (assignRes.data || [])) {
+      if (!amap[a.assigned_to]) amap[a.assigned_to] = new Set()
+      amap[a.assigned_to].add(a.module_id)
+    }
+    setAllAssignments(amap)
+    setTrainingLoading(false)
+  }
+
+  async function handleSaveAssignments(userId, selectedModuleIds) {
+    // Delete all existing, then insert new
+    await supabase.from('grounding_assignments').delete().eq('assigned_to', userId)
+    if (selectedModuleIds.size > 0) {
+      const rows = [...selectedModuleIds].map(modId => ({
+        assigned_to: userId,
+        module_id: modId,
+        assigned_by: session.user.id,
+      }))
+      await supabase.from('grounding_assignments').insert(rows)
+    }
+    await fetchTrainingData()
+    setAssigningUser(null)
+  }
 
   async function fetchUsers() {
     setLoading(true)
@@ -189,6 +225,7 @@ export default function AdminPage() {
             {[
               { id: 'users',     label: 'Users' },
               { id: 'analytics', label: 'Analytics' },
+              { id: 'training',  label: 'Training' },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -432,6 +469,69 @@ export default function AdminPage() {
             </>
           )}
 
+          {/* ── TRAINING TAB ── */}
+          {activeTab === 'training' && (
+            <>
+              <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-5 text-sm text-blue-800">
+                Assign specific training modules to any user — fellows, team members, partners. Assigned users will see
+                their modules in the Grounding tab regardless of role.
+              </div>
+
+              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                {trainingLoading ? (
+                  <LoadingSpinner text="Loading training data..." />
+                ) : users.length === 0 ? (
+                  <div className="p-8 text-center text-gray-400">No users yet.</div>
+                ) : (
+                  <div className="divide-y divide-gray-50">
+                    {users.map(user => {
+                      const cfg = getRoleConfig(user.nook_role)
+                      const assigned = user.user_id ? (allAssignments[user.user_id] || new Set()) : null
+                      const count = assigned?.size || 0
+                      return (
+                        <div key={user.id} className="flex items-center gap-4 px-5 py-4">
+                          <div className="w-9 h-9 rounded-full bg-navy flex items-center justify-center flex-shrink-0">
+                            <span className="text-white text-xs font-semibold">
+                              {getInitials(user.full_name, user.email)}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium text-gray-900 truncate">{user.full_name || '—'}</p>
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${cfg.color}`}>
+                                {cfg.label}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                          </div>
+                          <div className="flex-shrink-0 text-sm text-gray-500 w-32 text-right">
+                            {assigned !== null ? (
+                              count > 0
+                                ? <span className="text-teal-700 font-semibold">{count} module{count !== 1 ? 's' : ''} assigned</span>
+                                : <span className="text-gray-400 italic">None assigned</span>
+                            ) : <span className="text-gray-300 italic text-xs">Pending invite</span>}
+                          </div>
+                          <div className="flex-shrink-0">
+                            {user.user_id ? (
+                              <button
+                                onClick={() => setAssigningUser({ ...user, currentAssigned: assigned })}
+                                className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200
+                                  text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors">
+                                {count > 0 ? 'Edit' : 'Assign'}
+                              </button>
+                            ) : (
+                              <span className="text-xs text-gray-300">—</span>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
         </div>
       </main>
 
@@ -443,6 +543,128 @@ export default function AdminPage() {
           onDone={fetchUsers}
         />
       )}
+
+      {assigningUser && (
+        <AssignTrainingModal
+          user={assigningUser}
+          modules={trainingModules}
+          currentAssigned={assigningUser.currentAssigned || new Set()}
+          onClose={() => setAssigningUser(null)}
+          onSave={(selectedIds) => handleSaveAssignments(assigningUser.user_id, selectedIds)}
+        />
+      )}
+    </div>
+  )
+}
+
+function AssignTrainingModal({ user, modules, currentAssigned, onClose, onSave }) {
+  const [selected, setSelected] = useState(new Set(currentAssigned))
+  const [saving, setSaving] = useState(false)
+
+  // Group by phase
+  const phaseMap = {}
+  for (const m of modules) {
+    if (!phaseMap[m.phase]) phaseMap[m.phase] = { phase: m.phase, phase_name: m.phase_name, modules: [] }
+    phaseMap[m.phase].modules.push(m)
+  }
+  const phases = Object.values(phaseMap).sort((a, b) => a.phase - b.phase)
+
+  function toggle(modId) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      next.has(modId) ? next.delete(modId) : next.add(modId)
+      return next
+    })
+  }
+
+  function togglePhase(phase) {
+    const phaseIds = phase.modules.map(m => m.id)
+    const allOn = phaseIds.every(id => selected.has(id))
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (allOn) phaseIds.forEach(id => next.delete(id))
+      else phaseIds.forEach(id => next.add(id))
+      return next
+    })
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    await onSave(selected)
+    setSaving(false)
+  }
+
+  const PHASE_COLORS = [
+    'text-teal-700 bg-teal-50',
+    'text-blue-700 bg-blue-50',
+    'text-purple-700 bg-purple-50',
+    'text-amber-700 bg-amber-50',
+  ]
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] flex flex-col">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+          <div>
+            <h2 className="text-base font-bold text-navy">Assign Training</h2>
+            <p className="text-xs text-gray-500 mt-0.5">{user.full_name || user.email}</p>
+          </div>
+          <button onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="overflow-y-auto flex-1 px-6 py-4 space-y-5">
+          {phases.map((ph, i) => {
+            const phaseIds = ph.modules.map(m => m.id)
+            const allOn = phaseIds.every(id => selected.has(id))
+            const someOn = phaseIds.some(id => selected.has(id))
+            const colorClass = PHASE_COLORS[i % PHASE_COLORS.length]
+            return (
+              <div key={ph.phase}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${colorClass}`}>
+                    Phase {ph.phase}: {ph.phase_name}
+                  </span>
+                  <button onClick={() => togglePhase(ph)}
+                    className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                    {allOn ? 'Deselect all' : someOn ? 'Select all' : 'Select all'}
+                  </button>
+                </div>
+                <div className="space-y-1.5">
+                  {ph.modules.map(m => (
+                    <label key={m.id}
+                      className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors
+                        ${selected.has(m.id) ? 'border-navy/30 bg-navy/5' : 'border-gray-100 hover:border-gray-200'}`}>
+                      <input type="checkbox" checked={selected.has(m.id)}
+                        onChange={() => toggle(m.id)} className="accent-navy w-4 h-4 flex-shrink-0" />
+                      <span className="text-sm text-gray-700">{m.title}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="flex gap-2 px-6 py-4 border-t border-gray-100 flex-shrink-0">
+          <button onClick={onClose}
+            className="flex-1 py-2.5 rounded-lg text-sm font-semibold border border-gray-200
+              text-gray-600 hover:bg-gray-50 transition-colors">
+            Cancel
+          </button>
+          <button onClick={handleSave} disabled={saving}
+            className="flex-1 bg-navy text-white py-2.5 rounded-lg text-sm font-semibold
+              hover:bg-navy/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
+            {saving
+              ? <><div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />Saving...</>
+              : `Save — ${selected.size} module${selected.size !== 1 ? 's' : ''}`}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

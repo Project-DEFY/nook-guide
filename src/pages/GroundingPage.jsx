@@ -13,7 +13,231 @@ const PHASE_COLORS = [
 ]
 const pc = phase => PHASE_COLORS[phase] || PHASE_COLORS[0]
 
-// ─── Router ──────────────────────────────────────────────────────────────────
+function isQuestionDone(q, resp) {
+  if (!resp) return false
+  if (q.question_type === 'short_answer') return resp.self_assessed_correct !== null
+  return resp.seen_explanation === true
+}
+
+// ─── QUESTION BLOCK ───────────────────────────────────────────────────────────
+
+function QuestionBlock({ question, userId, existingResponse, onComplete }) {
+  const [selected, setSelected] = useState(existingResponse?.response || '')
+  const [shortText, setShortText] = useState(existingResponse?.response || '')
+  const [submitted, setSubmitted] = useState(!!existingResponse)
+  const [isCorrect, setIsCorrect] = useState(
+    existingResponse ? existingResponse.is_correct : null
+  )
+  const [showExplanation, setShowExplanation] = useState(
+    existingResponse?.seen_explanation || false
+  )
+  const [selfAssessed, setSelfAssessed] = useState(
+    existingResponse?.self_assessed_correct ?? null
+  )
+  const [saving, setSaving] = useState(false)
+
+  const isYesNo = question.question_type === 'yes_no'
+  const isMCQ = question.question_type === 'multiple_choice'
+  const isShort = question.question_type === 'short_answer'
+  const opts = isMCQ ? (typeof question.options === 'string'
+    ? JSON.parse(question.options) : question.options) || [] : []
+
+  const done = showExplanation || (isShort && selfAssessed !== null)
+
+  async function upsertResponse(payload) {
+    await supabase.from('grounding_question_responses').upsert(
+      { user_id: userId, question_id: question.id, ...payload },
+      { onConflict: 'user_id,question_id' }
+    )
+  }
+
+  async function submitAnswer(answer) {
+    setSaving(true)
+    const correct = isShort ? null : answer.toLowerCase() === question.correct_answer.toLowerCase()
+    await upsertResponse({ response: answer, is_correct: correct, seen_explanation: false })
+    setSelected(answer)
+    setSubmitted(true)
+    setIsCorrect(correct)
+    // For correct non-short answers, auto-acknowledge
+    if (!isShort && correct) {
+      await upsertResponse({ response: answer, is_correct: true, seen_explanation: true })
+      setShowExplanation(true)
+      onComplete(question.id)
+    }
+    setSaving(false)
+  }
+
+  async function acknowledge() {
+    setSaving(true)
+    await upsertResponse({ response: selected, is_correct: isCorrect, seen_explanation: true })
+    setShowExplanation(true)
+    onComplete(question.id)
+    setSaving(false)
+  }
+
+  async function selfAssess(correct) {
+    setSaving(true)
+    await upsertResponse({
+      response: shortText, is_correct: null,
+      self_assessed_correct: correct, seen_explanation: true,
+    })
+    setSelfAssessed(correct)
+    setShowExplanation(true)
+    onComplete(question.id)
+    setSaving(false)
+  }
+
+  // ── Done state (compact summary) ────────────────────────────────────────────
+  if (done) {
+    const wasCorrect = isShort ? selfAssessed : isCorrect
+    return (
+      <div className={`rounded-lg px-3 py-2.5 border flex items-start gap-2 text-sm
+        ${wasCorrect !== false ? 'bg-teal-50 border-teal-200' : 'bg-amber-50 border-amber-200'}`}>
+        <span className={`flex-shrink-0 font-bold ${wasCorrect !== false ? 'text-teal-600' : 'text-amber-500'}`}>
+          {wasCorrect !== false ? '✓' : '→'}
+        </span>
+        <div className="min-w-0">
+          <p className="text-gray-700 font-medium leading-snug">{question.question_text}</p>
+          {!isShort && !wasCorrect && (
+            <p className="text-xs text-gray-500 mt-0.5">Correct: {question.correct_answer}</p>
+          )}
+          {isShort && (
+            <p className="text-xs text-gray-400 mt-0.5 italic line-clamp-1">"{selected || shortText}"</p>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Not submitted yet ───────────────────────────────────────────────────────
+  if (!submitted) {
+    if (isYesNo) return (
+      <div className="bg-white border border-gray-200 rounded-xl p-4">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Quick check</p>
+        <p className="text-sm font-medium text-gray-800 mb-3">{question.question_text}</p>
+        <div className="flex gap-2">
+          {['Yes', 'No'].map(opt => (
+            <button key={opt} onClick={() => submitAnswer(opt.toLowerCase())} disabled={saving}
+              className="flex-1 py-2 rounded-lg text-sm font-semibold border
+                border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50">
+              {opt}
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+
+    if (isMCQ) return (
+      <div className="bg-white border border-gray-200 rounded-xl p-4">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Quick check</p>
+        <p className="text-sm font-medium text-gray-800 mb-3">{question.question_text}</p>
+        <div className="space-y-2 mb-3">
+          {opts.map(opt => (
+            <label key={opt} className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer
+              transition-colors ${selected === opt ? 'border-navy bg-navy/5' : 'border-gray-100 hover:border-gray-200'}`}>
+              <input type="radio" name={`q_${question.id}`} value={opt}
+                checked={selected === opt} onChange={() => setSelected(opt)}
+                className="mt-0.5 accent-navy" />
+              <span className="text-sm text-gray-700">{opt}</span>
+            </label>
+          ))}
+        </div>
+        <button onClick={() => selected && submitAnswer(selected)} disabled={!selected || saving}
+          className="w-full py-2 rounded-lg text-sm font-semibold bg-navy text-white
+            hover:bg-navy/90 disabled:opacity-40 transition-colors">
+          Submit
+        </button>
+      </div>
+    )
+
+    if (isShort) return (
+      <div className="bg-white border border-gray-200 rounded-xl p-4">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Reflect & respond</p>
+        <p className="text-sm font-medium text-gray-800 mb-3">{question.question_text}</p>
+        <textarea value={shortText} onChange={e => setShortText(e.target.value)}
+          placeholder="Write your answer..." rows={3}
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none
+            focus:outline-none focus:ring-1 focus:ring-teal-400 placeholder:text-gray-300 mb-3" />
+        <button onClick={() => shortText.trim() && submitAnswer(shortText.trim())}
+          disabled={!shortText.trim() || saving}
+          className="w-full py-2 rounded-lg text-sm font-semibold bg-navy text-white
+            hover:bg-navy/90 disabled:opacity-40 transition-colors">
+          Submit
+        </button>
+      </div>
+    )
+  }
+
+  // ── Submitted — show result ─────────────────────────────────────────────────
+
+  // Short answer: show model answer + self-assess
+  if (isShort) return (
+    <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Reflect & respond</p>
+      <p className="text-sm font-medium text-gray-800">{question.question_text}</p>
+      <div className="bg-gray-50 rounded-lg p-3">
+        <p className="text-xs font-semibold text-gray-400 mb-1">Your answer</p>
+        <p className="text-sm text-gray-700 italic">"{shortText}"</p>
+      </div>
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <p className="text-xs font-semibold text-blue-700 mb-1">Model answer</p>
+        <p className="text-sm text-gray-700">{question.correct_answer}</p>
+      </div>
+      {question.context_excerpt && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <p className="text-xs font-semibold text-amber-700 mb-1">Worth re-reading</p>
+          <p className="text-sm text-gray-600 italic">"{question.context_excerpt}"</p>
+        </div>
+      )}
+      <p className="text-xs font-semibold text-gray-500">How did you do?</p>
+      <div className="flex gap-2">
+        <button onClick={() => selfAssess(true)} disabled={saving}
+          className="flex-1 py-2 rounded-lg text-sm font-semibold bg-teal-500 text-white
+            hover:bg-teal-600 disabled:opacity-50 transition-colors">
+          I got it ✓
+        </button>
+        <button onClick={() => selfAssess(false)} disabled={saving}
+          className="flex-1 py-2 rounded-lg text-sm font-semibold border border-amber-300
+            text-amber-700 hover:bg-amber-50 disabled:opacity-50 transition-colors">
+          I missed this
+        </button>
+      </div>
+    </div>
+  )
+
+  // MCQ / yes-no: show correct/wrong
+  if (isCorrect) return (
+    <div className="bg-teal-50 border border-teal-200 rounded-xl p-4 space-y-2">
+      <p className="text-sm font-bold text-teal-700">✓ Correct!</p>
+      <p className="text-sm text-gray-700">{question.explanation}</p>
+    </div>
+  )
+
+  // Wrong
+  return (
+    <div className="bg-white border border-amber-200 rounded-xl p-4 space-y-3">
+      <p className="text-sm font-semibold text-amber-600">Not quite.</p>
+      <div>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Correct answer</p>
+        <p className="text-sm font-semibold text-gray-800">{question.correct_answer}</p>
+      </div>
+      <p className="text-sm text-gray-600">{question.explanation}</p>
+      {question.context_excerpt && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <p className="text-xs font-semibold text-amber-700 mb-1">Read this again before moving on</p>
+          <p className="text-sm text-gray-600 italic">"{question.context_excerpt}"</p>
+        </div>
+      )}
+      <button onClick={acknowledge} disabled={saving}
+        className="w-full py-2 rounded-lg text-sm font-semibold bg-amber-500 text-white
+          hover:bg-amber-600 disabled:opacity-50 transition-colors">
+        Got it — continue
+      </button>
+    </div>
+  )
+}
+
+// ─── ROUTER ───────────────────────────────────────────────────────────────────
 
 export default function GroundingPage() {
   const { userAccess } = useContext(AuthContext)
@@ -34,26 +258,23 @@ function FellowGrounding() {
   const [activeModule, setActiveModule] = useState(null)
   const [reflectionText, setReflectionText] = useState('')
   const [saving, setSaving] = useState(false)
-
-  const cycleNum = userAccess?.current_cycle_number ?? 0
+  // { [modId]: { questions: [], responses: {[qId]: resp}, doneSet: Set<qId>, loaded: bool } }
+  const [moduleData, setModuleData] = useState({})
 
   useEffect(() => { loadAll() }, [])
 
   async function loadAll() {
     setLoading(true)
-
     const [modRes, progRes, assignRes] = await Promise.all([
-      supabase.from('grounding_modules').select('*').order('phase').order('order_in_phase'),
-      supabase.from('fellow_grounding_progress').select('*').eq('fellow_id', session.user.id),
-      supabase.from('hopper_assignments').select('hopper_id').eq('fellow_id', session.user.id).eq('is_active', true).maybeSingle(),
+      supabase.rpc('get_my_grounding_modules'),
+      supabase.from('grounding_progress').select('*').eq('user_id', session.user.id),
+      supabase.from('hopper_assignments').select('hopper_id')
+        .eq('fellow_id', session.user.id).eq('is_active', true).maybeSingle(),
     ])
 
     const mods = modRes.data || []
     const prog = {}
     for (const p of (progRes.data || [])) prog[p.module_id] = p
-    for (const mod of mods) {
-      if (!prog[mod.id]) prog[mod.id] = { module_id: mod.id, status: mod.unlock_after_cycle <= cycleNum ? 'available' : 'locked' }
-    }
     setModules(mods)
     setProgress(prog)
 
@@ -63,32 +284,58 @@ function FellowGrounding() {
         .eq('user_id', assignRes.data.hopper_id).maybeSingle()
       setHopper(hopperAccess)
     }
-
     setLoading(false)
+  }
+
+  async function openModule(mod) {
+    const isOpen = activeModule?.id === mod.id
+    setActiveModule(isOpen ? null : mod)
+    if (isOpen) return
+
+    // Load questions + responses if not already loaded
+    if (moduleData[mod.id]?.loaded) return
+
+    const { data: questions } = await supabase
+      .from('grounding_questions').select('*').eq('module_id', mod.id).order('display_order')
+
+    const qIds = (questions || []).map(q => q.id)
+    const { data: responses } = qIds.length > 0
+      ? await supabase.from('grounding_question_responses').select('*')
+          .in('question_id', qIds).eq('user_id', session.user.id)
+      : { data: [] }
+
+    const respMap = {}
+    for (const r of (responses || [])) respMap[r.question_id] = r
+
+    const doneSet = new Set(
+      (questions || []).filter(q => isQuestionDone(q, respMap[q.id])).map(q => q.id)
+    )
+
+    setModuleData(prev => ({
+      ...prev,
+      [mod.id]: { questions: questions || [], responses: respMap, doneSet, loaded: true },
+    }))
+  }
+
+  function handleQuestionComplete(modId, questionId) {
+    setModuleData(prev => {
+      const md = prev[modId]
+      if (!md) return prev
+      const newDone = new Set(md.doneSet)
+      newDone.add(questionId)
+      return { ...prev, [modId]: { ...md, doneSet: newDone } }
+    })
   }
 
   async function markComplete(mod) {
     setSaving(true)
-    const existing = progress[mod.id]
-    await supabase.from('fellow_grounding_progress').upsert({
-      fellow_id: session.user.id,
+    await supabase.from('grounding_progress').upsert({
+      user_id: session.user.id,
       module_id: mod.id,
       status: 'completed',
-      reflection_note: reflectionText || existing?.reflection_note || null,
+      reflection_answer: reflectionText || null,
       completed_at: new Date().toISOString(),
-    }, { onConflict: 'fellow_id,module_id' })
-
-    // Unlock next module in same phase
-    const phaseModules = modules.filter(m => m.phase === mod.phase).sort((a, b) => a.order_in_phase - b.order_in_phase)
-    const idx = phaseModules.findIndex(m => m.id === mod.id)
-    if (idx !== -1 && idx + 1 < phaseModules.length) {
-      const next = phaseModules[idx + 1]
-      if ((progress[next.id]?.status || 'locked') === 'locked') {
-        await supabase.from('fellow_grounding_progress').upsert({
-          fellow_id: session.user.id, module_id: next.id, status: 'available',
-        }, { onConflict: 'fellow_id,module_id' })
-      }
-    }
+    }, { onConflict: 'user_id,module_id' })
 
     setActiveModule(null)
     setReflectionText('')
@@ -105,7 +352,6 @@ function FellowGrounding() {
     </div>
   )
 
-  // Group by phase
   const phaseMap = {}
   for (const mod of modules) {
     if (!phaseMap[mod.phase]) phaseMap[mod.phase] = { phase: mod.phase, phase_name: mod.phase_name, modules: [] }
@@ -158,80 +404,106 @@ function FellowGrounding() {
             </div>
           )}
 
+          {modules.length === 0 && !loading && (
+            <div className="bg-white rounded-xl border border-gray-100 p-12 text-center text-gray-400">
+              <p className="text-lg mb-2">No modules available yet.</p>
+              <p className="text-sm">Your training will appear here once assigned.</p>
+            </div>
+          )}
+
           {/* Phases */}
           {phaseList.map(ph => {
             const color = pc(ph.phase)
             const phaseDone = ph.modules.every(m => progress[m.id]?.status === 'completed')
-            const phaseUnlocked = ph.modules.some(m => (progress[m.id]?.status || 'locked') !== 'locked')
+            const phaseUnlocked = true // all returned modules are accessible
             return (
               <div key={ph.phase} className="mb-8">
                 <div className="flex items-center gap-3 mb-4">
                   <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
-                    ${phaseDone ? 'bg-teal-500 text-white' : phaseUnlocked ? `${color.bg} ${color.text}` : 'bg-gray-100 text-gray-400'}`}>
+                    ${phaseDone ? 'bg-teal-500 text-white' : `${color.bg} ${color.text}`}`}>
                     {phaseDone ? '✓' : ph.phase}
                   </div>
-                  <p className={`text-sm font-bold ${phaseUnlocked ? 'text-navy' : 'text-gray-400'}`}>
-                    {ph.phase_name}
-                  </p>
+                  <p className="text-sm font-bold text-navy">{ph.phase_name}</p>
                 </div>
 
                 <div className="space-y-3 pl-5 border-l-2 border-gray-100">
                   {ph.modules.map(mod => {
                     const p = progress[mod.id] || {}
-                    const isLocked = p.status === 'locked' || (!p.status && mod.unlock_after_cycle > cycleNum)
                     const isDone = p.status === 'completed'
                     const isActive = activeModule?.id === mod.id
+                    const md = moduleData[mod.id]
+                    const totalQ = md?.questions?.length || 0
+                    const doneQ = md?.doneSet?.size || 0
+                    const allQDone = totalQ === 0 || doneQ >= totalQ
+
+                    const inlineQs = md?.questions?.filter(q => q.placement === 'inline') || []
+                    const endQs = md?.questions?.filter(q => q.placement === 'end_quiz') || []
 
                     return (
                       <div key={mod.id}
                         className={`bg-white rounded-xl border transition-all
-                          ${isDone ? 'border-teal-200' : isLocked ? 'border-gray-100 opacity-60' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
+                          ${isDone ? 'border-teal-200' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}
                           ${isActive ? 'shadow-md border-teal-300' : ''}`}>
-                        <button onClick={() => !isLocked && setActiveModule(isActive ? null : mod)}
-                          disabled={isLocked} className="w-full text-left p-4 flex items-start gap-3">
-                          {/* Status indicator */}
+
+                        <button onClick={() => openModule(mod)}
+                          className="w-full text-left p-4 flex items-start gap-3">
                           <div className={`w-5 h-5 rounded-full flex items-center justify-center
                             flex-shrink-0 mt-0.5
-                            ${isDone ? 'bg-teal-500' : isLocked ? 'bg-gray-200' : color.bg}`}>
+                            ${isDone ? 'bg-teal-500' : color.bg}`}>
                             {isDone ? (
                               <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                              </svg>
-                            ) : isLocked ? (
-                              <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                               </svg>
                             ) : <div className={`w-2 h-2 rounded-full ${color.dot}`} />}
                           </div>
 
                           <div className="flex-1 min-w-0">
                             <p className={`text-sm font-semibold leading-snug
-                              ${isDone ? 'text-teal-700' : isLocked ? 'text-gray-400' : 'text-navy'}`}>
+                              ${isDone ? 'text-teal-700' : 'text-navy'}`}>
                               {mod.title}
                             </p>
-                            {isDone && p.reflection_note && (
-                              <p className="text-xs text-teal-600 mt-0.5 line-clamp-1 italic">"{p.reflection_note}"</p>
+                            {isDone && p.reflection_answer && (
+                              <p className="text-xs text-teal-600 mt-0.5 line-clamp-1 italic">
+                                "{p.reflection_answer}"
+                              </p>
                             )}
-                            {!isDone && !isLocked && (
-                              <p className="text-xs text-gray-400 mt-0.5 line-clamp-2 leading-relaxed">{mod.context}</p>
+                            {!isDone && (
+                              <p className="text-xs text-gray-400 mt-0.5 line-clamp-2 leading-relaxed">
+                                {mod.context}
+                              </p>
                             )}
                           </div>
 
-                          {!isLocked && (
-                            <svg className={`w-4 h-4 flex-shrink-0 mt-0.5 transition-transform
-                              ${isActive ? 'rotate-180 text-teal-500' : 'text-gray-300'}`}
-                              fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          )}
+                          <svg className={`w-4 h-4 flex-shrink-0 mt-0.5 transition-transform
+                            ${isActive ? 'rotate-180 text-teal-500' : 'text-gray-300'}`}
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
                         </button>
 
                         {/* Expanded content */}
                         {isActive && (
                           <div className="px-4 pb-4 border-t border-gray-50 pt-4 space-y-4">
+
+                            {/* Context */}
                             <p className="text-sm text-gray-700 leading-relaxed">{mod.context}</p>
 
+                            {/* Inline questions */}
+                            {inlineQs.length > 0 && (
+                              <div className="space-y-3">
+                                {inlineQs.map(q => (
+                                  <QuestionBlock
+                                    key={q.id}
+                                    question={q}
+                                    userId={session.user.id}
+                                    existingResponse={md?.responses?.[q.id]}
+                                    onComplete={(qId) => handleQuestionComplete(mod.id, qId)}
+                                  />
+                                ))}
+                              </div>
+                            )}
+
+                            {/* SOP link */}
                             {mod.sop_page_id && (
                               <Link to={`/section/${mod.sop_page_id}`}
                                 className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg
@@ -245,16 +517,22 @@ function FellowGrounding() {
                               </Link>
                             )}
 
+                            {/* Practical task */}
                             {mod.practical_task && (
                               <div className={`rounded-lg p-3 ${color.bg} border ${color.border}`}>
-                                <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${color.text}`}>This week</p>
+                                <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${color.text}`}>
+                                  This week
+                                </p>
                                 <p className="text-sm text-gray-700">{mod.practical_task}</p>
                               </div>
                             )}
 
+                            {/* Reflection */}
                             {mod.reflection_prompt && (
                               <div>
-                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Reflect</p>
+                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">
+                                  Reflect
+                                </p>
                                 <p className="text-sm text-gray-600 italic mb-2">{mod.reflection_prompt}</p>
                                 <textarea value={reflectionText} onChange={e => setReflectionText(e.target.value)}
                                   placeholder="Write a few words... (optional)" rows={3}
@@ -264,6 +542,36 @@ function FellowGrounding() {
                               </div>
                             )}
 
+                            {/* End-quiz questions */}
+                            {endQs.length > 0 && (
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex-1 h-px bg-gray-100" />
+                                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-2">
+                                    Check your understanding
+                                  </p>
+                                  <div className="flex-1 h-px bg-gray-100" />
+                                </div>
+                                {endQs.map(q => (
+                                  <QuestionBlock
+                                    key={q.id}
+                                    question={q}
+                                    userId={session.user.id}
+                                    existingResponse={md?.responses?.[q.id]}
+                                    onComplete={(qId) => handleQuestionComplete(mod.id, qId)}
+                                  />
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Question progress nudge */}
+                            {totalQ > 0 && !allQDone && (
+                              <p className="text-xs text-gray-400 text-center">
+                                {doneQ}/{totalQ} check-in questions answered — complete them to get the most from this module.
+                              </p>
+                            )}
+
+                            {/* Mark complete */}
                             {!isDone ? (
                               <button onClick={() => markComplete(mod)} disabled={saving}
                                 className="w-full py-2.5 rounded-lg text-sm font-semibold
@@ -307,8 +615,6 @@ function HopperDashboard() {
 
   async function loadFellows() {
     setLoading(true)
-
-    // Step 1: get assigned fellow_ids
     const { data: assignments } = await supabase
       .from('hopper_assignments').select('fellow_id')
       .eq('hopper_id', session.user.id).eq('is_active', true)
@@ -316,8 +622,6 @@ function HopperDashboard() {
     if (!assignments?.length) { setLoading(false); return }
 
     const fellowIds = assignments.map(a => a.fellow_id)
-
-    // Step 2: get nook_guide_access rows
     const { data: accessRows } = await supabase
       .from('nook_guide_access')
       .select('user_id, full_name, email, nook_location, current_cycle_number, nook_role')
@@ -326,11 +630,14 @@ function HopperDashboard() {
     const fs = (accessRows || []).map(r => ({ fellow_id: r.user_id, ...r }))
     setFellows(fs)
 
-    // Step 3: progress counts
     const prog = {}
     await Promise.all(fs.map(async f => {
-      const { data: p } = await supabase.from('fellow_grounding_progress').select('status').eq('fellow_id', f.fellow_id)
-      prog[f.fellow_id] = { total: p?.length || 0, completed: p?.filter(x => x.status === 'completed').length || 0 }
+      const { data: p } = await supabase.from('grounding_progress')
+        .select('status').eq('user_id', f.fellow_id)
+      prog[f.fellow_id] = {
+        total: p?.length || 0,
+        completed: p?.filter(x => x.status === 'completed').length || 0,
+      }
     }))
     setFellowProgress(prog)
 
@@ -384,7 +691,6 @@ function HopperDashboard() {
             </div>
           ) : (
             <div className="flex gap-6">
-              {/* Fellows sidebar */}
               <div className="w-64 flex-shrink-0 space-y-2">
                 {fellows.map(f => {
                   const prog = fellowProgress[f.fellow_id] || { total: 0, completed: 0 }
@@ -394,10 +700,8 @@ function HopperDashboard() {
                       className={`w-full text-left p-3 rounded-xl border transition-all
                         ${sel ? 'bg-navy border-navy' : 'bg-white border-gray-100 hover:border-gray-200'}`}>
                       <div className="flex items-center gap-2.5 mb-2">
-                        <div className="w-7 h-7 rounded-full bg-navy flex items-center justify-center flex-shrink-0">
-                          <span className={`text-xs font-bold ${sel ? 'text-navy' : 'text-white'}`}>
-                            {initials(f.full_name || f.email)}
-                          </span>
+                        <div className="w-7 h-7 rounded-full bg-teal-500 flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs font-bold text-white">{initials(f.full_name || f.email)}</span>
                         </div>
                         <div className="min-w-0">
                           <p className={`text-xs font-semibold truncate ${sel ? 'text-white' : 'text-gray-900'}`}>
@@ -420,7 +724,6 @@ function HopperDashboard() {
                 })}
               </div>
 
-              {/* Notes panel */}
               {selectedFellow && (
                 <div className="flex-1 min-w-0 bg-white rounded-xl border border-gray-100">
                   <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
@@ -441,7 +744,6 @@ function HopperDashboard() {
 
                   <div className="p-5">
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Your notes</p>
-
                     <div className="flex gap-2 mb-4">
                       <textarea value={newNote} onChange={e => setNewNote(e.target.value)}
                         placeholder="Add a note about this fellow..." rows={2}
@@ -521,8 +823,12 @@ function AdminGrounding() {
 
     const prog = {}
     await Promise.all((fellowRes.data || []).filter(f => f.user_id).map(async f => {
-      const { data: p } = await supabase.from('fellow_grounding_progress').select('status').eq('fellow_id', f.user_id)
-      prog[f.user_id] = { total: p?.length || 0, completed: p?.filter(x => x.status === 'completed').length || 0 }
+      const { data: p } = await supabase.from('grounding_progress')
+        .select('status').eq('user_id', f.user_id)
+      prog[f.user_id] = {
+        total: p?.length || 0,
+        completed: p?.filter(x => x.status === 'completed').length || 0,
+      }
     }))
     setProgress(prog)
     setLoading(false)
