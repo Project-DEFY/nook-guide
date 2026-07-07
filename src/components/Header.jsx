@@ -39,6 +39,7 @@ export default function Header() {
   const isAdmin = userAccess?.nook_role === 'admin'
   const isCoAdmin = userAccess?.nook_role === 'co_admin'
   const showGrounding = userAccess && !['partner'].includes(userAccess.nook_role)
+  const showCircles = userAccess && !['partner'].includes(userAccess.nook_role)
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
@@ -70,6 +71,24 @@ export default function Header() {
               {userAccess?.nook_role === 'new_fellow' && (
                 <span className="absolute -top-1 -right-1 w-2 h-2 bg-teal-500 rounded-full" />
               )}
+            </Link>
+          )}
+
+          {/* Circles nav link */}
+          {showCircles && (
+            <Link
+              to="/circles"
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                text-sm font-medium transition-colors flex-shrink-0
+                ${location.pathname === '/circles'
+                  ? 'bg-amber-50 text-amber-700'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              Circles
             </Link>
           )}
 
@@ -141,6 +160,15 @@ export default function Header() {
                       {userAccess?.nook_role === 'new_fellow' && (
                         <span className="w-1.5 h-1.5 bg-teal-500 rounded-full" />
                       )}
+                    </Link>
+                  )}
+                  {showCircles && (
+                    <Link
+                      to="/circles"
+                      onClick={() => setDropdownOpen(false)}
+                      className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      Circles
                     </Link>
                   )}
                   {(isAdmin || isCoAdmin) && (
