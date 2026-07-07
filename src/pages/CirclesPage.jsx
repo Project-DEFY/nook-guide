@@ -669,6 +669,391 @@ function RecordingBanner() {
   )
 }
 
+// ─── DESIGN YOUR OWN CIRCLE ───────────────────────────────────────────────────
+
+const ANATOMY = [
+  { step: '1', label: 'Title', desc: 'A name that captures the spirit of the inquiry — not the topic.' },
+  { step: '2', label: 'Lens', desc: 'Which of the three lenses anchors this circle? Inner, Community, or World.' },
+  { step: '3', label: 'Opening question', desc: 'One specific, personal question that opens the inquiry. The hardest part to get right.' },
+  { step: '4', label: 'Discussion prompts', desc: '2–4 follow-up questions that deepen or turn the conversation. Not leading — widening.' },
+  { step: '5', label: 'Landing question', desc: 'A final question that helps the group carry something forward. Often quiet and integrative.' },
+]
+
+const GOOD_VS_BAD = [
+  {
+    topic: 'Goals and aspiration',
+    lens: 'inner',
+    bad: {
+      title: 'What are your goals?',
+      question: '"What are your goals for this year?"',
+      why: [
+        'Invites performance, not honesty',
+        'Most people say what sounds good, not what is true',
+        'The word "goals" triggers anxiety and defensiveness',
+        'No one is specific — answers float in the abstract',
+      ],
+    },
+    good: {
+      title: 'What I Want to Become',
+      question: '"What is one thing you want to become — not a job or an achievement, but a quality of person — that you have never said out loud?"',
+      why: [
+        'Specific and personal — it asks for something private, not performed',
+        '"Never said out loud" creates safety and invites honesty',
+        '"Quality of person" shifts away from productivity and toward identity',
+        'The constraint (one thing) prevents deflection',
+      ],
+    },
+  },
+  {
+    topic: 'Community problems',
+    lens: 'world',
+    bad: {
+      title: 'What problems exist in our community?',
+      question: '"What problems exist in our community, and how can we help?"',
+      why: [
+        '"Problems" and "how can we help" collapses inquiry into solution mode immediately',
+        'Produces lists of familiar grievances, not real thinking',
+        '"We can help" assumes the group is outside the problem',
+        'Nothing in this question creates discomfort — and circles need a little discomfort',
+      ],
+    },
+    good: {
+      title: 'Crisis Mapping',
+      question: '"Name one crisis happening in your community right now that most people are pretending isn\'t there."',
+      why: [
+        '"Pretending isn\'t there" forces honesty — people must name the unspeakable',
+        'Specific: one crisis, not a list',
+        'Creates discomfort productively — it asks for courage, not solutions',
+        'Positions the group as insiders to the community, not helpers looking in',
+      ],
+    },
+  },
+  {
+    topic: 'Emotional check-in',
+    lens: 'inner',
+    bad: {
+      title: 'How is everyone feeling?',
+      question: '"How are you feeling today? Is everyone okay?"',
+      why: [
+        '"Is everyone okay?" signals you want them to say yes',
+        'Most people answer with "good" or "fine" — the check-in becomes a formality',
+        'There is no real question here — just a request for reassurance',
+        'It closes down honesty instead of opening it',
+      ],
+    },
+    good: {
+      title: 'Carry and Release',
+      question: '"What is one thing you have been carrying this week that you haven\'t set down yet?"',
+      why: [
+        '"Carrying" is a concrete image — it makes the emotional physical and safe to name',
+        '"Haven\'t set down yet" implies it\'s okay to still be holding it',
+        'Creates genuine emotional presence without asking "are you sad?"',
+        'Everyone has something — no one has to perform wellness',
+      ],
+    },
+  },
+]
+
+const CIRCLE_TRAPS = [
+  {
+    trap: 'The abstract question',
+    example: '"What does justice mean to you?"',
+    fix: 'Anchor it in the personal and specific. "Tell us about a time you saw something unjust and stayed quiet. What stopped you?"',
+  },
+  {
+    trap: 'The leading question',
+    example: '"Don\'t you think we should be doing more for our community?"',
+    fix: 'Remove your opinion from the question entirely. A circle question opens space — it doesn\'t push toward an answer.',
+  },
+  {
+    trap: 'The multi-part question',
+    example: '"What is your goal, why is it important, and how will you achieve it?"',
+    fix: 'One question only. Let it land. Discussion prompts can open the later parts.',
+  },
+  {
+    trap: 'The homework question',
+    example: '"Research a local NGO and tell us what they do."',
+    fix: 'Circle questions ask for what people already carry — their experience, their feeling, their memory. No preparation required.',
+  },
+  {
+    trap: 'The comfort question',
+    example: '"Share something positive that happened this week."',
+    fix: 'Positive-only questions close down honesty. A circle holds all of it — the good and the hard. Design for truth, not warmth.',
+  },
+]
+
+function DesignView() {
+  const [openTrap, setOpenTrap] = useState(null)
+  const [cardData, setCardData] = useState({
+    title: '', lens: '', opening: '', prompts: ['', '', ''], landing: '', notes: '',
+  })
+
+  return (
+    <div className="space-y-8">
+
+      {/* Intro */}
+      <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
+        <h2 className="text-base font-bold text-amber-900 mb-2">
+          Designing Your Own Circle
+        </h2>
+        <p className="text-sm text-amber-800 leading-relaxed">
+          From Week 9 — your second cycle — you begin designing circles yourself.
+          This is not a free-for-all. A well-designed circle has a specific anatomy,
+          and the hardest part is the opening question. This section shows you how to build one,
+          what to avoid, and what the difference between a weak circle and a strong one actually looks like.
+        </p>
+      </div>
+
+      {/* Anatomy */}
+      <div>
+        <h2 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">The Anatomy of a Circle</h2>
+        <div className="space-y-2">
+          {ANATOMY.map(a => (
+            <div key={a.step} className="flex gap-3 bg-white border border-gray-100 rounded-lg px-4 py-3">
+              <span className="w-6 h-6 rounded-full bg-navy text-white text-xs font-bold
+                flex items-center justify-center flex-shrink-0 mt-0.5">
+                {a.step}
+              </span>
+              <div>
+                <span className="text-sm font-semibold text-gray-900">{a.label}</span>
+                <span className="text-sm text-gray-500 ml-2">{a.desc}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Good vs Bad examples */}
+      <div>
+        <h2 className="text-sm font-bold text-gray-900 mb-1 uppercase tracking-wide">
+          Good vs Bad — What the Difference Looks Like
+        </h2>
+        <p className="text-xs text-gray-500 mb-4">
+          Three topics, each designed two ways. The difference is almost always in the opening question.
+        </p>
+        <div className="space-y-5">
+          {GOOD_VS_BAD.map((ex, i) => {
+            const lens = LENS_CONFIG[ex.lens]
+            return (
+              <div key={i} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                {/* Topic header */}
+                <div className={`px-4 py-3 border-b flex items-center gap-2 ${lens.header}`}>
+                  <span className={`text-xs font-bold uppercase tracking-wide ${lens.accent}`}>
+                    Topic: {ex.topic}
+                  </span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${lens.badge}`}>
+                    {lens.label}
+                  </span>
+                </div>
+
+                <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
+                  {/* Bad */}
+                  <div className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center">
+                        <span className="text-red-600 text-xs font-bold">✕</span>
+                      </span>
+                      <span className="text-xs font-bold text-red-700 uppercase tracking-wide">Weak Circle</span>
+                    </div>
+                    <p className="text-sm font-semibold text-gray-800 mb-1">{ex.bad.title}</p>
+                    <p className="text-xs text-gray-500 italic mb-3">{ex.bad.question}</p>
+                    <div className="space-y-1.5">
+                      {ex.bad.why.map((w, j) => (
+                        <div key={j} className="flex gap-2">
+                          <span className="text-red-400 text-xs mt-0.5 flex-shrink-0">→</span>
+                          <p className="text-xs text-gray-600 leading-relaxed">{w}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Good */}
+                  <div className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center">
+                        <span className="text-emerald-600 text-xs font-bold">✓</span>
+                      </span>
+                      <span className="text-xs font-bold text-emerald-700 uppercase tracking-wide">Strong Circle</span>
+                    </div>
+                    <p className="text-sm font-semibold text-gray-800 mb-1">{ex.good.title}</p>
+                    <p className="text-xs text-gray-500 italic mb-3">{ex.good.question}</p>
+                    <div className="space-y-1.5">
+                      {ex.good.why.map((w, j) => (
+                        <div key={j} className="flex gap-2">
+                          <span className="text-emerald-500 text-xs mt-0.5 flex-shrink-0">→</span>
+                          <p className="text-xs text-gray-600 leading-relaxed">{w}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Common traps */}
+      <div>
+        <h2 className="text-sm font-bold text-gray-900 mb-1 uppercase tracking-wide">
+          5 Things That Break a Circle
+        </h2>
+        <p className="text-xs text-gray-500 mb-3">
+          Tap each trap to see what to do instead.
+        </p>
+        <div className="space-y-2">
+          {CIRCLE_TRAPS.map((t, i) => (
+            <div key={i} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+              <button
+                onClick={() => setOpenTrap(openTrap === i ? null : i)}
+                className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-orange-600 text-xs font-bold">!</span>
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">{t.trap}</p>
+                    <p className="text-xs text-gray-400 italic mt-0.5">{t.example}</p>
+                  </div>
+                </div>
+                <svg className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0
+                  ${openTrap === i ? 'rotate-180' : ''}`}
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {openTrap === i && (
+                <div className="px-4 pb-4 pt-1 border-t border-gray-100">
+                  <p className="text-xs text-gray-500 font-medium mb-1">Instead:</p>
+                  <p className="text-sm text-gray-700 leading-relaxed">{t.fix}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Design Card */}
+      <div>
+        <h2 className="text-sm font-bold text-gray-900 mb-1 uppercase tracking-wide">
+          Circle Design Card
+        </h2>
+        <p className="text-xs text-gray-500 mb-3">
+          Draft your circle here before running it. Get feedback from your co-fellow first.
+        </p>
+        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Circle title</label>
+              <input
+                value={cardData.title}
+                onChange={e => setCardData(d => ({ ...d, title: e.target.value }))}
+                placeholder="e.g. What I Needed to Hear"
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2
+                  focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-400"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Lens</label>
+              <select
+                value={cardData.lens}
+                onChange={e => setCardData(d => ({ ...d, lens: e.target.value }))}
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2
+                  focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-400 bg-white"
+              >
+                <option value="">Choose a lens…</option>
+                <option value="inner">Inside Us (personal / internal)</option>
+                <option value="community">Outside Us (community / relational)</option>
+                <option value="world">Beyond Us (systems / structural)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Opening question</label>
+            <textarea
+              value={cardData.opening}
+              onChange={e => setCardData(d => ({ ...d, opening: e.target.value }))}
+              rows={2}
+              placeholder="One specific, personal question. Make it impossible to answer with one word."
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2
+                focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-400 resize-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
+              Discussion prompts <span className="text-gray-400 font-normal">(2–4)</span>
+            </label>
+            <div className="space-y-2">
+              {cardData.prompts.map((p, i) => (
+                <input
+                  key={i}
+                  value={p}
+                  onChange={e => {
+                    const updated = [...cardData.prompts]
+                    updated[i] = e.target.value
+                    setCardData(d => ({ ...d, prompts: updated }))
+                  }}
+                  placeholder={`Prompt ${i + 1}`}
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2
+                    focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-400"
+                />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Landing question</label>
+            <textarea
+              value={cardData.landing}
+              onChange={e => setCardData(d => ({ ...d, landing: e.target.value }))}
+              rows={2}
+              placeholder="What does the group carry forward? Often quieter and more integrative than the opener."
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2
+                focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-400 resize-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Facilitation notes</label>
+            <textarea
+              value={cardData.notes}
+              onChange={e => setCardData(d => ({ ...d, notes: e.target.value }))}
+              rows={2}
+              placeholder="What might come up? What should the host watch for? Any timing notes."
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2
+                focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-400 resize-none"
+            />
+          </div>
+
+          {/* Preview card */}
+          {(cardData.title || cardData.opening) && (
+            <div className={`border rounded-xl p-4 mt-2
+              ${cardData.lens ? LENS_CONFIG[cardData.lens]?.header : 'border-gray-200 bg-gray-50'}`}>
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Preview</p>
+              {cardData.title && (
+                <p className="text-base font-bold text-gray-900 mb-1">{cardData.title}</p>
+              )}
+              {cardData.lens && (
+                <span className={`text-xs px-2 py-0.5 rounded-full ${LENS_CONFIG[cardData.lens]?.badge} inline-block mb-3`}>
+                  {LENS_CONFIG[cardData.lens]?.label}
+                </span>
+              )}
+              {cardData.opening && (
+                <p className="text-sm text-gray-700 italic">"{cardData.opening}"</p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+    </div>
+  )
+}
+
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 
 export default function CirclesPage() {
@@ -706,8 +1091,8 @@ export default function CirclesPage() {
           <div className="flex items-center gap-3 mb-2">
             <div className="w-9 h-9 rounded-xl bg-navy flex items-center justify-center">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                <circle cx="12" cy="12" r="8" strokeWidth={1.5} />
+                <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" />
               </svg>
             </div>
             <div>
@@ -727,8 +1112,12 @@ export default function CirclesPage() {
         <RecordingBanner />
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-lg mb-6 w-fit">
-          {[['guide', 'Phase 1 Weekly Guide'], ['library', 'Full Circle Library']].map(([v, l]) => (
+        <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-lg mb-6 w-fit">
+          {[
+            ['guide', 'Phase 1 Weekly Guide'],
+            ['library', 'Full Circle Library'],
+            ['design', 'Design Your Own'],
+          ].map(([v, l]) => (
             <button key={v}
               onClick={() => setTab(v)}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors
@@ -739,10 +1128,9 @@ export default function CirclesPage() {
         </div>
 
         {/* Content */}
-        {tab === 'guide'
-          ? <PhaseGuideView circles={circles} onSelect={setSelected} />
-          : <LibraryView circles={circles} onSelect={setSelected} />
-        }
+        {tab === 'guide' && <PhaseGuideView circles={circles} onSelect={setSelected} />}
+        {tab === 'library' && <LibraryView circles={circles} onSelect={setSelected} />}
+        {tab === 'design' && <DesignView />}
       </main>
 
       {/* Modal */}
