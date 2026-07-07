@@ -66,16 +66,21 @@ const LENS_CONFIG = {
 }
 
 const FLAVOR_BADGES = {
-  reflection:         'bg-gray-100 text-gray-600',
-  debate:             'bg-orange-100 text-orange-700',
-  vulnerability:      'bg-rose-100 text-rose-700',
-  analysis:           'bg-sky-100 text-sky-700',
-  problem_solving:    'bg-emerald-100 text-emerald-700',
-  acknowledgment:     'bg-amber-100 text-amber-700',
-  imagination:        'bg-violet-100 text-violet-700',
-  conflict_resolution:'bg-red-100 text-red-700',
-  renewal:            'bg-teal-100 text-teal-700',
-  celebration:        'bg-yellow-100 text-yellow-700',
+  reflection:          'bg-gray-100 text-gray-600',
+  debate:              'bg-orange-100 text-orange-700',
+  vulnerability:       'bg-rose-100 text-rose-700',
+  analysis:            'bg-sky-100 text-sky-700',
+  problem_solving:     'bg-emerald-100 text-emerald-700',
+  acknowledgment:      'bg-amber-100 text-amber-700',
+  imagination:         'bg-violet-100 text-violet-700',
+  conflict_resolution: 'bg-red-100 text-red-700',
+  renewal:             'bg-teal-100 text-teal-700',
+  celebration:         'bg-yellow-100 text-yellow-700',
+  // Inquiry flavors
+  scientific_inquiry:  'bg-cyan-100 text-cyan-700',
+  historical_inquiry:  'bg-amber-100 text-amber-800',
+  literary:            'bg-pink-100 text-pink-700',
+  philosophical:       'bg-violet-100 text-violet-700',
 }
 
 const FLAVOR_LABELS = {
@@ -83,6 +88,21 @@ const FLAVOR_LABELS = {
   analysis: 'Analysis', problem_solving: 'Problem-Solving', acknowledgment: 'Acknowledgment',
   imagination: 'Imagination', conflict_resolution: 'Conflict Resolution',
   renewal: 'Renewal', celebration: 'Celebration',
+  scientific_inquiry: 'Science', historical_inquiry: 'History',
+  literary: 'Literary', philosophical: 'Philosophy',
+}
+
+const MODE_CONFIG = {
+  reflective: {
+    label: 'Reflective',
+    badge: 'bg-indigo-50 text-indigo-700 border border-indigo-200',
+    desc: 'Personal experience and shared feeling — you bring what you carry.',
+  },
+  inquiry: {
+    label: 'Inquiry',
+    badge: 'bg-teal-50 text-teal-700 border border-teal-200',
+    desc: 'Collective exploration of a question, topic, poem, or idea — the fellow comes prepared.',
+  },
 }
 
 // Phase 1 weekly prescription — 8 weeks
@@ -90,13 +110,14 @@ const PHASE1_WEEKS = [
   {
     week: 1,
     theme: 'First Steps — Building Trust',
-    opening_spec: '2 Inner + 2 Community',
-    closing_spec: '3 Inner + 2 Community',
-    notes: 'Focus entirely on self-introduction and personal story. No World lens yet — trust has to be built before the group can think together about power and systems. The opener sets the tone for the entire cycle. Choose circles that allow people to be specific, not general.',
+    opening_spec: '2 Reflective + 2 Inquiry',
+    closing_spec: '5 Reflective (Inner + Community)',
+    notes: 'Start with personal story for reflective openings — trust must be built before the group can think structurally together. The two inquiry openings this week should be gentle entry points: stars, stories, music. Inquiry circles in Week 1 are invitations to wonder, not deep analysis.',
     featured_titles: [
       'Not What You Do, But What You Carry',
       'Where I Come From and What I Carry',
-      'The Most Interesting Person in Your Neighborhood',
+      'Why Do Stars Twinkle?',
+      'What Is a Story For?',
       'Carry and Release',
       'Thank Someone in the Room',
     ],
@@ -104,14 +125,14 @@ const PHASE1_WEEKS = [
   {
     week: 2,
     theme: 'Finding Your Voice',
-    opening_spec: '2 Inner + 2 Community + 1 World (first introduction)',
-    closing_spec: '2 Inner + 3 Community',
-    notes: 'Introduce the World lens carefully — start with something personal and familiar (like "Learning and Unlearning") rather than pure systems analysis. The group is still finding its voice. The Community closing circles start connecting personal experience to collective responsibility.',
+    opening_spec: '2 Reflective + 2 Inquiry',
+    closing_spec: '5 Reflective (Inner + Community)',
+    notes: 'Reflective circles this week should push toward voice and honesty. Inquiry circles can move into language, music, and memory — subjects with personal resonance. The group is still finding its footing; choose inquiry topics that feel close to daily experience.',
     featured_titles: [
       'What Makes This Hard',
       'What I Know That I Wasn\'t Taught',
-      'Who Gets Heard and Who Doesn\'t',
-      'Learning and Unlearning',
+      'Words That Don\'t Exist in Your Language',
+      'Where Do Songs Come From?',
       'What We Witnessed',
       'One True Thing',
     ],
@@ -119,89 +140,89 @@ const PHASE1_WEEKS = [
   {
     week: 3,
     theme: 'Community as Text',
-    opening_spec: '1 Inner + 3 Community + 1 World',
-    closing_spec: '1 Inner + 2 Community + 2 World',
-    notes: 'Shift the balance toward community. This week the Nook\'s external context — the neighborhood, the community, the local problems — becomes the primary subject of inquiry. The group should start to feel like they share a common object of study: the world just outside the door.',
+    opening_spec: '1 Reflective + 3 Inquiry',
+    closing_spec: '5 Reflective (Community + World)',
+    notes: 'Shift the balance toward inquiry this week — the Nook\'s external context becomes the subject. Inquiry circles about community, writing, and everyday history pull the group outward. Reflective closing circles should connect what was learned to personal experience.',
     featured_titles: [
       'The Problem That Has No Name',
+      'Who Invented Writing, and Why?',
+      'What Was Life Like 500 Years Ago?',
+      'How Did Languages Spread?',
       'The Gift Your Community Gives',
-      'The Story We Tell About Ourselves',
-      'Why Does This Still Exist?',
-      'Whose Day Are We Building For?',
       'The Unseen Work',
     ],
   },
   {
     week: 4,
     theme: 'Systems and Power',
-    opening_spec: '1 Inner + 2 Community + 2 World',
-    closing_spec: '1 Inner + 2 Community + 2 World',
-    notes: 'This is the week to go directly into World lens inquiry. The group should be ready now to analyze power, trace costs, and think structurally. The Inner closing circles keep it personal — the analysis stays grounded in lived experience, not abstraction.',
+    opening_spec: '1 Reflective + 3–4 Inquiry',
+    closing_spec: '5 Reflective (Inner + World)',
+    notes: 'This is the week to go fully into structural thinking. Inquiry openings about empire, indigenous knowledge, and democracy are natural here. The reflective closing circles keep the analysis grounded in lived experience — the group should leave each day feeling something, not just knowing something.',
     featured_titles: [
-      'The Story of Power',
-      'Who Paid for This?',
+      'Why Do Empires Fall?',
+      'What Happened to Indigenous Knowledge?',
+      'What If We Always Had Democracy?',
       'Crisis Mapping',
-      'What Changed',
-      'The Scale Problem',
+      'The Story of Power',
       'What Do We Owe?',
     ],
   },
   {
     week: 5,
     theme: 'Going Deeper',
-    opening_spec: '2 Inner + 1 Community + 2 World',
-    closing_spec: '2 Inner + 1 Community + 2 World',
-    notes: 'Return to the inner lens after a week of outward focus. The vulnerability circles (The Question I\'ve Been Avoiding, Softness) can now go deeper because the group has built enough history together. The World circles this week should be ones that require imagination and historical thinking.',
+    opening_spec: '2 Reflective + 2 Inquiry',
+    closing_spec: '5 Reflective (Inner + Community)',
+    notes: 'Return to balance after a heavy inquiry week. Vulnerability circles (The Question I\'ve Been Avoiding, Softness) can now go deeper — the group has history. Inquiry circles this week should be ones that invite wonder and personal connection: memory, dreams, time.',
     featured_titles: [
       'The Question I\'ve Been Avoiding',
-      'What Indigenous Communities Know',
-      'Revolution',
+      'How Does Memory Work?',
+      'Why Do We Dream?',
+      'Is Time Real?',
       'Softness',
-      'Despair and Hope',
       'What I Needed and Didn\'t Say',
     ],
   },
   {
     week: 6,
     theme: 'Our Work in the World',
-    opening_spec: '1 Inner + 2 Community + 2 World',
-    closing_spec: '1 Inner + 2 Community + 2 World',
-    notes: 'Connect the Nook\'s work explicitly to the community and the future. The "Future We\'re Building" and "Climate and Us" circles ask builders to think about the long-term context their work lives inside. This is a good week for a Project Circle (special) if a decision point has arrived.',
+    opening_spec: '1 Reflective + 3 Inquiry',
+    closing_spec: '5 Reflective (Community + World)',
+    notes: 'Connect the Nook\'s work to larger questions. Inquiry circles about ecology, physics, and obligation pair well with reflective circles about what the group is building. A good week for a Project Circle (special) if a decision point has arrived.',
     featured_titles: [
+      'How Do Trees Talk to Each Other?',
+      'What Is Light Made Of?',
+      'What Do We Owe Strangers?',
       'The Future We\'re Building',
       'Climate and Us',
-      'Youth and Elders',
-      'Whose Day Are We Building For?',
-      'What Changed Us',
       'Beauty and Resilience',
     ],
   },
   {
     week: 7,
     theme: 'Reflection and Design',
-    opening_spec: '2 Inner + 1 Community + 2 World',
-    closing_spec: '2 Inner + 2 Community + 1 World',
-    notes: 'The cycle is moving toward its end. This week\'s circles should invite the group to look back at how they\'ve changed and forward at who they want to be. A good week to run "What I Want to Become" as an opening — the group now has context to answer it with more depth than in week 1.',
+    opening_spec: '2 Reflective + 2 Inquiry',
+    closing_spec: '5 Reflective (Inner + Community)',
+    notes: 'The cycle is moving toward its end. Reflective circles should invite the group to look back at how they\'ve changed. Inquiry circles — poems, language, infinity — create space for wonder as the cycle winds down. Good week to run "What I Want to Become" as a reflective opening.',
     featured_titles: [
       'What I Want to Become',
-      'Anger Is Information',
-      'What Changed',
+      'Reading a Poem Together',
+      'What Came Before Language?',
+      'What Is Infinity?',
       'The Long Game',
-      'Tomorrow',
       'Who Are We Missing?',
     ],
   },
   {
     week: 8,
     theme: 'Closing the Cycle',
-    opening_spec: '2 Inner + 2 Community + 1 World',
-    closing_spec: '2 Inner + 1 Community + 2 World + Season Circle (closing)',
-    notes: 'End the cycle intentionally. The Season Circle (closing flavor) should run on the final day — this is the one circle most worth recording and preserving. The group should feel the weight of what this cycle was and what they\'re taking forward. From Week 9 onwards, builders begin to design their own circles.',
+    opening_spec: '2 Reflective + 2 Inquiry',
+    closing_spec: '5 Reflective + Season Circle (final day)',
+    notes: 'End the cycle intentionally. The Season Circle (closing flavor) runs on the final day — record it if the group consents. Inquiry openings this week should be ones that feel like completion: What Is a Story For?, What Came Before Language? The group should feel the weight of what this cycle was. From Week 9, builders begin designing their own circles.',
     featured_titles: [
+      'What Is a Story For?',
+      'What Came Before Language?',
       'The Problem I\'ve Carried',
-      'What I Know That I Wasn\'t Taught',
       'A Story of Solidarity',
-      'The Long Game',
       'Enough',
       'Season Circle',
     ],
@@ -224,6 +245,13 @@ function CircleCard({ circle, onClick }) {
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-1.5 mb-2">
+            {/* Mode badge */}
+            {circle.circle_mode === 'inquiry' && (
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full
+                bg-teal-50 text-teal-700 border border-teal-200">
+                ◈ Inquiry
+              </span>
+            )}
             {/* Type badge */}
             <span className={`text-xs font-medium px-2 py-0.5 rounded-full
               ${isOpening ? 'bg-orange-100 text-orange-700' :
@@ -395,14 +423,15 @@ function CircleModal({ circle, onClose }) {
 function LibraryView({ circles, onSelect }) {
   const [typeFilter, setTypeFilter] = useState('all')
   const [lensFilter, setLensFilter] = useState('all')
+  const [modeFilter, setModeFilter] = useState('all')
 
   const filtered = circles.filter(c => {
     if (typeFilter !== 'all' && c.circle_type !== typeFilter) return false
     if (lensFilter !== 'all' && c.lens !== lensFilter) return false
+    if (modeFilter !== 'all' && c.circle_mode !== modeFilter) return false
     return true
   })
 
-  // Group by lens then type for display
   const lenses = lensFilter === 'all'
     ? ['inner', 'community', 'world', 'any']
     : [lensFilter]
@@ -411,8 +440,40 @@ function LibraryView({ circles, onSelect }) {
 
   return (
     <div>
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-6">
+      {/* Mode toggle — prominent at top */}
+      <div className="flex gap-2 mb-4">
+        {[
+          ['all', 'All Circles', 'bg-gray-100'],
+          ['reflective', '◎ Reflective', 'bg-indigo-50 border border-indigo-200'],
+          ['inquiry', '◈ Inquiry', 'bg-teal-50 border border-teal-200'],
+        ].map(([v, l, active]) => (
+          <button key={v}
+            onClick={() => setModeFilter(v)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
+              ${modeFilter === v
+                ? (v === 'inquiry' ? 'bg-teal-100 text-teal-800 border border-teal-300' :
+                   v === 'reflective' ? 'bg-indigo-100 text-indigo-800 border border-indigo-300' :
+                   'bg-gray-200 text-gray-800')
+                : 'bg-gray-100 text-gray-500 hover:text-gray-700'}`}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      {/* Inquiry mode explainer */}
+      {modeFilter === 'inquiry' && (
+        <div className="bg-teal-50 border border-teal-200 rounded-xl p-4 mb-5">
+          <p className="text-sm text-teal-800 leading-relaxed">
+            <span className="font-semibold">Inquiry circles</span> are opening circles where the group
+            thinks through a question, poem, or idea together. The fellow comes prepared with a fact,
+            image, or artifact to introduce. Nobody needs to know the answer — the discovery is collective.
+            All inquiry circles are <span className="font-medium">opening type only</span>.
+          </p>
+        </div>
+      )}
+
+      {/* Secondary filters */}
+      <div className="flex flex-wrap gap-3 mb-5">
         <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
           {[['all','All'], ['opening','Opening'], ['closing','Closing'], ['special','Special']].map(([v, l]) => (
             <button key={v}
@@ -424,7 +485,7 @@ function LibraryView({ circles, onSelect }) {
           ))}
         </div>
         <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
-          {[['all','All Lenses'], ['inner','Inside Us'], ['community','Outside Us'], ['world','Beyond Us'], ['any','Special']].map(([v, l]) => (
+          {[['all','All Lenses'], ['inner','Inside Us'], ['community','Outside Us'], ['world','Beyond Us'], ['any','Any']].map(([v, l]) => (
             <button key={v}
               onClick={() => setLensFilter(v)}
               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors
@@ -438,7 +499,7 @@ function LibraryView({ circles, onSelect }) {
       {/* Count */}
       <p className="text-sm text-gray-500 mb-4">
         {filtered.length} circle{filtered.length !== 1 ? 's' : ''}
-        {lensFilter !== 'all' || typeFilter !== 'all' ? ' (filtered)' : ' in the library'}
+        {lensFilter !== 'all' || typeFilter !== 'all' || modeFilter !== 'all' ? ' (filtered)' : ' in the library'}
       </p>
 
       {/* Grid by lens */}
@@ -501,20 +562,20 @@ function PhaseGuideView({ circles, onSelect }) {
       <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6">
         <h3 className="text-sm font-bold text-gray-800 mb-1">Phase 1: Guided Circles (First Cycle)</h3>
         <p className="text-sm text-gray-600 leading-relaxed">
-          In the first cycle, circles are pre-designed for you. Each week has a theme, a required
-          balance across the Three Lenses, and a set of featured circles to pick from. You choose
-          which circle to run each day based on the mood of the group — but by the end of each week
-          you should have covered the required mix.
+          In the first cycle, circles are pre-designed for you. Each week has a theme, a
+          prescribed balance of Reflective and Inquiry openings, and featured circles to pick from.
+          You choose which to run each day based on the mood of the group — but by the end of each
+          week you should have covered the required mix.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-md font-medium">
-            ◯ Opening — minimum 45 min
+          <span className="text-xs bg-teal-50 text-teal-700 border border-teal-200 px-2 py-1 rounded-md font-medium">
+            ◈ Inquiry opening — fellow comes prepared
+          </span>
+          <span className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-1 rounded-md font-medium">
+            ◎ Reflective opening — personal sharing
           </span>
           <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md font-medium">
-            ● Closing — minimum 30 min
-          </span>
-          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-md font-medium">
-            ★ Special — as needed
+            ● Closing — always reflective, 30 min+
           </span>
         </div>
       </div>
@@ -573,15 +634,26 @@ function PhaseGuideView({ circles, onSelect }) {
 
               {isOpen && (
                 <div className="px-4 pb-4 border-t border-gray-100 pt-4">
-                  {/* Lens requirements */}
+                  {/* Circle prescription */}
                   <div className="grid grid-cols-2 gap-2 mb-4">
-                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                      <p className="text-xs font-semibold text-orange-700 mb-1">◯ Opening circles</p>
-                      <p className="text-xs text-orange-900">{week.opening_spec}</p>
+                    <div className="border border-gray-200 rounded-lg p-3 space-y-2">
+                      <p className="text-xs font-semibold text-gray-700">◯ Opening circles</p>
+                      {week.opening_spec.split('+').map((part, i) => {
+                        const p = part.trim()
+                        const isInquiry = p.toLowerCase().includes('inquiry')
+                        return (
+                          <span key={i} className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full mr-1
+                            ${isInquiry
+                              ? 'bg-teal-50 text-teal-700 border border-teal-200'
+                              : 'bg-indigo-50 text-indigo-700 border border-indigo-200'}`}>
+                            {isInquiry ? '◈' : '◎'} {p}
+                          </span>
+                        )
+                      })}
                     </div>
-                    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
-                      <p className="text-xs font-semibold text-indigo-700 mb-1">● Closing circles</p>
-                      <p className="text-xs text-indigo-900">{week.closing_spec}</p>
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                      <p className="text-xs font-semibold text-gray-700 mb-1">● Closing circles</p>
+                      <p className="text-xs text-gray-600">{week.closing_spec}</p>
                     </div>
                   </div>
 
