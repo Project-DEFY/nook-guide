@@ -36,6 +36,8 @@ export const GUIDE_STRUCTURE = {
           description: 'The mindset, skills, and commitments the Fellow role requires — and what it doesn\'t.' },
         { id: '379fef71-1233-81ff-b26e-c9d6a88e5393', title: 'Learner Archetypes', readTime: '8 min',
           description: 'Six profiles of how learners engage with a Nook, to help Fellows adapt their approach.' },
+        { id: 'circles-link', route: '/circles', title: 'Discussion Circles', readTime: 'Daily practice',
+          description: 'The opening and closing ritual that holds every Nook day together — reflective circles, inquiry circles, phase guide, and full library.' },
       ]
     },
     {

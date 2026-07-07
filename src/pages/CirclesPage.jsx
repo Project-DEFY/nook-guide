@@ -76,6 +76,7 @@ const FLAVOR_BADGES = {
   conflict_resolution: 'bg-red-100 text-red-700',
   renewal:             'bg-teal-100 text-teal-700',
   celebration:         'bg-yellow-100 text-yellow-700',
+  peer_support:        'bg-rose-100 text-rose-700',
   // Inquiry flavors
   scientific_inquiry:  'bg-cyan-100 text-cyan-700',
   historical_inquiry:  'bg-amber-100 text-amber-800',
@@ -88,6 +89,7 @@ const FLAVOR_LABELS = {
   analysis: 'Analysis', problem_solving: 'Problem-Solving', acknowledgment: 'Acknowledgment',
   imagination: 'Imagination', conflict_resolution: 'Conflict Resolution',
   renewal: 'Renewal', celebration: 'Celebration',
+  peer_support: 'Peer Support',
   scientific_inquiry: 'Science', historical_inquiry: 'History',
   literary: 'Literary', philosophical: 'Philosophy',
 }
@@ -105,7 +107,7 @@ const MODE_CONFIG = {
   },
 }
 
-// Phase 1 weekly prescription — 8 weeks
+// Phase 1 weekly prescription — first 8 guided weeks of a 20-week cycle
 const PHASE1_WEEKS = [
   {
     week: 1,
@@ -418,14 +420,158 @@ function CircleModal({ circle, onClose }) {
   )
 }
 
+// ─── WHAT IS A CIRCLE VIEW ────────────────────────────────────────────────────
+
+function WhatIsACircleView({ onExplore, onGuide }) {
+  return (
+    <div className="space-y-6">
+
+      {/* Hero definition */}
+      <div className="bg-navy text-white rounded-2xl p-6">
+        <h2 className="text-lg font-bold mb-3">A circle is a daily ritual of shared attention.</h2>
+        <p className="text-blue-100 text-sm leading-relaxed mb-4">
+          Every day at the Nook begins and ends in a circle. Not a meeting. Not a check-in.
+          A practice with a structure, a purpose, and a host. Over time, circles become the
+          connective tissue of the community — the reason people trust each other, think
+          together, and keep showing up.
+        </p>
+        <div className="flex gap-3 flex-wrap">
+          <div className="bg-white/10 rounded-lg px-3 py-2 text-xs text-blue-100 font-medium">
+            45–60 min opening circle
+          </div>
+          <div className="bg-white/10 rounded-lg px-3 py-2 text-xs text-blue-100 font-medium">
+            30 min closing circle
+          </div>
+          <div className="bg-white/10 rounded-lg px-3 py-2 text-xs text-blue-100 font-medium">
+            Every Nook day, always
+          </div>
+        </div>
+      </div>
+
+      {/* Two types */}
+      <div>
+        <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-3">Two kinds of circle</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="bg-white border border-indigo-200 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center">◎</span>
+              <p className="text-sm font-bold text-indigo-800">Reflective</p>
+            </div>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Personal experience and shared feeling. The fellow asks a question
+              they have sat with themselves — and shares their own answer first.
+              The group goes around, then opens. No right answers, only honest ones.
+            </p>
+            <p className="text-xs text-indigo-600 font-medium mt-3">Best for: trust-building, processing, inner work</p>
+          </div>
+          <div className="bg-white border border-teal-200 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-6 h-6 rounded-full bg-teal-100 text-teal-700 text-xs font-bold flex items-center justify-center">◈</span>
+              <p className="text-sm font-bold text-teal-800">Inquiry</p>
+            </div>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Collective thinking about a question, poem, phenomenon, or idea.
+              The fellow brings a fact, image, or artifact to introduce. Nobody
+              needs to know the answer — the discovery is collective.
+            </p>
+            <p className="text-xs text-teal-600 font-medium mt-3">Best for: curiosity, science, history, ideas, literature</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Opening vs closing */}
+      <div>
+        <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-3">Opening vs. Closing</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <p className="text-sm font-bold text-amber-800 mb-1">◯ Opening circle</p>
+            <p className="text-sm text-amber-700 leading-relaxed">
+              Energetic and activating. Orients the group toward the day. Runs 45–60 minutes,
+              ideally before learning begins. Can be reflective or inquiry.
+            </p>
+          </div>
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+            <p className="text-sm font-bold text-gray-700 mb-1">● Closing circle</p>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Quieter and more reflective. Names what happened. Creates a ritual of
+              transition out of the space. Runs at least 30 minutes. Always reflective.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Three lenses */}
+      <div>
+        <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-3">The Three Lenses</h3>
+        <p className="text-sm text-gray-500 mb-3">
+          Circles are organized by what they point toward. Over time, a healthy Nook moves
+          across all three — so no one stays stuck inside their own head, or outside the
+          world, or disconnected from their community.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[
+            { lens: 'inner', icon: '♥', color: 'amber', label: 'Inside Us', desc: 'Fear, curiosity, identity, memory — what we carry.' },
+            { lens: 'community', icon: '⬡', color: 'emerald', label: 'Outside Us', desc: 'Neighborhood, family, community — whose voice is heard.' },
+            { lens: 'world', icon: '◉', color: 'blue', label: 'Beyond Us', desc: 'Systems, ecology, history — why injustice persists.' },
+          ].map(({ icon, color, label, desc }) => (
+            <div key={label} className={`bg-${color}-50 border border-${color}-200 rounded-xl p-3`}>
+              <p className={`text-sm font-bold text-${color}-800 mb-1`}>{icon} {label}</p>
+              <p className={`text-xs text-${color}-700 leading-relaxed`}>{desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* What circles achieve */}
+      <div className="bg-white border border-gray-200 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-gray-800 mb-3">What circles actually achieve</h3>
+        <div className="space-y-3">
+          {[
+            ['Trust', 'Regular circles build the baseline trust that makes hard conversations, peer learning, and honest feedback possible. Without this, everything else in the Nook is transactional.'],
+            ['Collective intelligence', 'When a group thinks together in a structured way — over weeks and months — they get better at it. Circles train the group\'s thinking muscle.'],
+            ['Attendance and belonging', 'Nooks that run consistent circles have better attendance. People come back because something meaningful happens at the start of every day.'],
+            ['M&E data', 'A well-run closing circle — "What changed for you today?" — produces genuine reflection data. Circles are not separate from measurement; they are the most honest data source you have.'],
+            ['Fellow development', 'Hosting circles trains the fellow in active listening, question design, and holding space. There is no better training than running circles weekly.'],
+          ].map(([title, desc]) => (
+            <div key={title} className="flex gap-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2 flex-shrink-0" />
+              <div>
+                <span className="text-sm font-semibold text-gray-800">{title}. </span>
+                <span className="text-sm text-gray-600">{desc}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* CTA */}
+      <div className="flex flex-wrap gap-3">
+        <button
+          onClick={onGuide}
+          className="flex items-center gap-2 px-4 py-2.5 bg-navy text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity">
+          See the Phase 1 weekly plan →
+        </button>
+        <button
+          onClick={onExplore}
+          className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors">
+          Browse the full library →
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── LIBRARY VIEW ─────────────────────────────────────────────────────────────
 
 function LibraryView({ circles, onSelect }) {
   const [typeFilter, setTypeFilter] = useState('all')
   const [lensFilter, setLensFilter] = useState('all')
   const [modeFilter, setModeFilter] = useState('all')
+  const [showPeerSupport, setShowPeerSupport] = useState(false)
 
   const filtered = circles.filter(c => {
+    if (showPeerSupport) return c.flavor === 'peer_support'
+    if (c.flavor === 'peer_support') return false  // hide from main view unless toggled
     if (typeFilter !== 'all' && c.circle_type !== typeFilter) return false
     if (lensFilter !== 'all' && c.lens !== lensFilter) return false
     if (modeFilter !== 'all' && c.circle_mode !== modeFilter) return false
@@ -441,16 +587,16 @@ function LibraryView({ circles, onSelect }) {
   return (
     <div>
       {/* Mode toggle — prominent at top */}
-      <div className="flex gap-2 mb-4">
+      <div className="flex flex-wrap gap-2 mb-4">
         {[
           ['all', 'All Circles', 'bg-gray-100'],
           ['reflective', '◎ Reflective', 'bg-indigo-50 border border-indigo-200'],
           ['inquiry', '◈ Inquiry', 'bg-teal-50 border border-teal-200'],
         ].map(([v, l, active]) => (
           <button key={v}
-            onClick={() => setModeFilter(v)}
+            onClick={() => { setModeFilter(v); setShowPeerSupport(false) }}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
-              ${modeFilter === v
+              ${!showPeerSupport && modeFilter === v
                 ? (v === 'inquiry' ? 'bg-teal-100 text-teal-800 border border-teal-300' :
                    v === 'reflective' ? 'bg-indigo-100 text-indigo-800 border border-indigo-300' :
                    'bg-gray-200 text-gray-800')
@@ -458,10 +604,19 @@ function LibraryView({ circles, onSelect }) {
             {l}
           </button>
         ))}
+        {/* Peer Support toggle — separate category */}
+        <button
+          onClick={() => setShowPeerSupport(p => !p)}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border
+            ${showPeerSupport
+              ? 'bg-rose-100 text-rose-800 border-rose-300'
+              : 'bg-rose-50 text-rose-500 border-rose-200 hover:text-rose-700'}`}>
+          ♥ Peer Support
+        </button>
       </div>
 
       {/* Inquiry mode explainer */}
-      {modeFilter === 'inquiry' && (
+      {!showPeerSupport && modeFilter === 'inquiry' && (
         <div className="bg-teal-50 border border-teal-200 rounded-xl p-4 mb-5">
           <p className="text-sm text-teal-800 leading-relaxed">
             <span className="font-semibold">Inquiry circles</span> are opening circles where the group
@@ -472,8 +627,27 @@ function LibraryView({ circles, onSelect }) {
         </div>
       )}
 
-      {/* Secondary filters */}
-      <div className="flex flex-wrap gap-3 mb-5">
+      {/* Peer support explainer */}
+      {showPeerSupport && (
+        <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 mb-5">
+          <div className="flex items-start gap-2">
+            <span className="text-rose-400 mt-0.5">♥</span>
+            <div>
+              <p className="text-sm font-semibold text-rose-800 mb-1">Peer Support &amp; Consultation Circles</p>
+              <p className="text-sm text-rose-700 leading-relaxed">
+                These circles are for learners who bring a real problem they are facing at the Nook —
+                a stuck project, a conflict, a resource gap, or a question about what to do next.
+                The community helps them think it through. These are deeper circles that work best
+                once the group has built enough trust (Phase 2+, except "Who Has What I Need?" which
+                can run from Phase 1).
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Secondary filters — hidden when Peer Support is active */}
+      <div className={`flex flex-wrap gap-3 mb-5 ${showPeerSupport ? 'hidden' : ''}`}>
         <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
           {[['all','All'], ['opening','Opening'], ['closing','Closing'], ['special','Special']].map(([v, l]) => (
             <button key={v}
@@ -499,7 +673,8 @@ function LibraryView({ circles, onSelect }) {
       {/* Count */}
       <p className="text-sm text-gray-500 mb-4">
         {filtered.length} circle{filtered.length !== 1 ? 's' : ''}
-        {lensFilter !== 'all' || typeFilter !== 'all' || modeFilter !== 'all' ? ' (filtered)' : ' in the library'}
+        {showPeerSupport ? ' — peer support & consultation' :
+          (lensFilter !== 'all' || typeFilter !== 'all' || modeFilter !== 'all' ? ' (filtered)' : ' in the library')}
       </p>
 
       {/* Grid by lens */}
@@ -560,12 +735,13 @@ function PhaseGuideView({ circles, onSelect }) {
     <div>
       {/* Phase intro */}
       <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6">
-        <h3 className="text-sm font-bold text-gray-800 mb-1">Phase 1: Guided Circles (First Cycle)</h3>
+        <h3 className="text-sm font-bold text-gray-800 mb-1">Phase 1: Guided Circles — First 8 Weeks</h3>
         <p className="text-sm text-gray-600 leading-relaxed">
-          In the first cycle, circles are pre-designed for you. Each week has a theme, a
+          For the first 8 weeks, circles are pre-designed for you. Each week has a theme, a
           prescribed balance of Reflective and Inquiry openings, and featured circles to pick from.
           You choose which to run each day based on the mood of the group — but by the end of each
-          week you should have covered the required mix.
+          week you should have covered the required mix. From Week 9 you start designing your own,
+          still within your first cycle (a full cycle is 4–6 months, about 20 weeks).
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <span className="text-xs bg-teal-50 text-teal-700 border border-teal-200 px-2 py-1 rounded-md font-medium">
@@ -590,7 +766,9 @@ function PhaseGuideView({ circles, onSelect }) {
           <div>
             <p className="text-sm font-semibold text-blue-800">After Week 8 — You Start Designing</p>
             <p className="text-sm text-blue-700 mt-1 leading-relaxed">
-              From the second cycle onwards, you use the full library to plan your own weekly circles.
+              From Week 9 onwards — still within your first cycle — you use the full library to plan
+              your own weekly circles. A full cycle runs 4–6 months (~20 weeks), so this guided phase
+              is just the first part of your first cycle.
               Phase 2: choose circles from a menu, adapt them for your context.
               Phase 3: design circles from scratch using the Three Lenses framework.
               The library stays your reference — it doesn't go away.
@@ -869,7 +1047,7 @@ function DesignView() {
           Designing Your Own Circle
         </h2>
         <p className="text-sm text-amber-800 leading-relaxed">
-          From Week 9 — your second cycle — you begin designing circles yourself.
+          From Week 9 — still in your first cycle — you begin designing circles yourself.
           This is not a free-for-all. A well-designed circle has a specific anatomy,
           and the hardest part is the opening question. This section shows you how to build one,
           what to avoid, and what the difference between a weak circle and a strong one actually looks like.
@@ -1130,7 +1308,7 @@ function DesignView() {
 
 export default function CirclesPage() {
   const { userAccess } = useContext(AuthContext)
-  const [tab, setTab] = useState('guide')
+  const [tab, setTab] = useState('what')
   const [circles, setCircles] = useState([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
@@ -1183,9 +1361,23 @@ export default function CirclesPage() {
         {/* Recording commitment */}
         <RecordingBanner />
 
+        {/* Fellow prep anchor */}
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex gap-3">
+          <span className="text-amber-500 mt-0.5 flex-shrink-0 text-base">◉</span>
+          <div>
+            <p className="text-sm font-semibold text-amber-800 mb-1">Before every circle: prepare your own answer</p>
+            <p className="text-sm text-amber-700 leading-relaxed">
+              You are not just posing a question to the group — you are a member of the circle.
+              Before you open it, know what <em>you</em> will share. Your vulnerability gives
+              the group permission to be vulnerable. Walk in prepared, not rehearsed.
+            </p>
+          </div>
+        </div>
+
         {/* Tabs */}
         <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-lg mb-6 w-fit">
           {[
+            ['what', 'What is a Circle?'],
             ['guide', 'Phase 1 Weekly Guide'],
             ['library', 'Full Circle Library'],
             ['design', 'Design Your Own'],
@@ -1200,6 +1392,7 @@ export default function CirclesPage() {
         </div>
 
         {/* Content */}
+        {tab === 'what' && <WhatIsACircleView onExplore={() => setTab('library')} onGuide={() => setTab('guide')} />}
         {tab === 'guide' && <PhaseGuideView circles={circles} onSelect={setSelected} />}
         {tab === 'library' && <LibraryView circles={circles} onSelect={setSelected} />}
         {tab === 'design' && <DesignView />}
