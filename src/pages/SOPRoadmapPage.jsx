@@ -489,7 +489,7 @@ function GanttRow({ sop, currentBand, isLast, onDotHover, tooltip }) {
 
           return (
             <div key={band.id}
-              className={`flex-1 flex items-center justify-center h-full relative
+              className={`flex-1 flex items-center justify-center gap-1 h-full relative
                 ${isCurrent ? 'bg-blue-50/50' : ''}`}>
               {bandDots.map(dot => (
                 <button
@@ -501,8 +501,9 @@ function GanttRow({ sop, currentBand, isLast, onDotHover, tooltip }) {
                       ? null
                       : { sop, state: dot.state, label: dot.label }
                   )}
-                  className={`relative z-10 w-4 h-4 rounded-full border-2 border-white shadow-sm
-                    transition-transform hover:scale-125 active:scale-110 cursor-pointer
+                  className={`relative z-10 rounded-full border-2 border-white shadow-sm
+                    transition-transform hover:scale-125 active:scale-110 cursor-pointer flex-shrink-0
+                    ${bandDots.length > 1 ? 'w-3 h-3' : 'w-4 h-4'}
                     ${dot.state === 'intro'   ? 'bg-teal-500'   :
                       dot.state === 'apCheck' ? 'bg-amber-500'  : 'bg-indigo-500'}`}
                   title={dot.label}
