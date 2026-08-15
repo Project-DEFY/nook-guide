@@ -300,7 +300,7 @@ export default function SOPRoadmapPage() {
               <span className="text-xs font-medium text-gray-600">Introduced</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3.5 h-3.5 rounded-full bg-amber-500 shadow-sm" />
+              <div className="w-3.5 h-3.5 rounded-full bg-yellow-400 shadow-sm" />
               <span className="text-xs font-medium text-gray-600">Check: Active Practice</span>
             </div>
             <div className="flex items-center gap-1.5">
@@ -418,7 +418,7 @@ function TimelineView({ currentBand }) {
           <div className="flex items-center gap-2 mb-1">
             <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0
               ${tooltip.state === 'intro' ? 'bg-teal-400' :
-                tooltip.state === 'apCheck' ? 'bg-amber-400' : 'bg-indigo-400'}`} />
+                tooltip.state === 'apCheck' ? 'bg-yellow-400' : 'bg-indigo-400'}`} />
             <span className="text-xs font-bold text-white/60 uppercase tracking-widest">
               {tooltip.state === 'intro' ? 'Introduced' :
                tooltip.state === 'apCheck' ? 'Active Practice — check at' : 'Routine — check at'}
@@ -505,7 +505,7 @@ function GanttRow({ sop, currentBand, isLast, onDotHover, tooltip }) {
                     transition-transform hover:scale-125 active:scale-110 cursor-pointer flex-shrink-0
                     ${bandDots.length > 1 ? 'w-3 h-3' : 'w-4 h-4'}
                     ${dot.state === 'intro'   ? 'bg-teal-500'   :
-                      dot.state === 'apCheck' ? 'bg-amber-500'  : 'bg-indigo-500'}`}
+                      dot.state === 'apCheck' ? 'bg-yellow-400' : 'bg-indigo-500'}`}
                   title={dot.label}
                 />
               ))}
@@ -597,7 +597,7 @@ function DetailCard({ sop, isExpanded, onToggle, currentBand }) {
         {!isExpanded && (
           <div className="flex items-center gap-1 flex-shrink-0">
             {sop.intro   && <div className="w-2.5 h-2.5 rounded-full bg-teal-400" />}
-            {sop.apCheck && <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />}
+            {sop.apCheck && <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />}
             {sop.routine && <div className="w-2.5 h-2.5 rounded-full bg-indigo-400" />}
           </div>
         )}
@@ -680,9 +680,9 @@ function DetailCard({ sop, isExpanded, onToggle, currentBand }) {
 
 function LifecycleStep({ state, data, label, sublabel, isCurrent, color }) {
   const colors = {
-    teal:   { dot: 'bg-teal-500',   text: 'text-teal-700',   bg: 'bg-teal-50',   border: 'border-teal-200'   },
-    amber:  { dot: 'bg-amber-500',  text: 'text-amber-700',  bg: 'bg-amber-50',  border: 'border-amber-200'  },
-    indigo: { dot: 'bg-indigo-500', text: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-200' },
+    teal:   { dot: 'bg-teal-500',    text: 'text-teal-700',   bg: 'bg-teal-50',    border: 'border-teal-200'   },
+    amber:  { dot: 'bg-yellow-400',  text: 'text-yellow-700', bg: 'bg-yellow-50',  border: 'border-yellow-300' },
+    indigo: { dot: 'bg-indigo-500',  text: 'text-indigo-700', bg: 'bg-indigo-50',  border: 'border-indigo-200' },
   }
   const c = colors[color]
 
