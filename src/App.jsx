@@ -11,6 +11,7 @@ import SearchPage from './pages/SearchPage'
 import AdminPage from './pages/AdminPage'
 import GroundingPage from './pages/GroundingPage'
 import CirclesPage from './pages/CirclesPage'
+import SOPRoadmapPage from './pages/SOPRoadmapPage'
 
 export const AuthContext = createContext(null)
 
@@ -83,6 +84,7 @@ export default function App() {
           <Route path="/admin" element={<ProtectedRoute adminOnly><AdminPage /></ProtectedRoute>} />
           <Route path="/grounding" element={<ProtectedRoute><GroundingPage /></ProtectedRoute>} />
           <Route path="/circles" element={<ProtectedRoute><CirclesPage /></ProtectedRoute>} />
+          <Route path="/roadmap" element={<ProtectedRoute><SOPRoadmapPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </BrowserRouter>

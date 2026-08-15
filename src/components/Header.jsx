@@ -40,6 +40,7 @@ export default function Header() {
   const isCoAdmin = userAccess?.nook_role === 'co_admin'
   const showGrounding = userAccess && !['partner'].includes(userAccess.nook_role)
   const showCircles = userAccess && !['partner'].includes(userAccess.nook_role)
+  const showRoadmap = userAccess && !['partner'].includes(userAccess.nook_role)
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
@@ -89,6 +90,24 @@ export default function Header() {
                 <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
               </svg>
               Circles
+            </Link>
+          )}
+
+          {/* SOP Roadmap nav link */}
+          {showRoadmap && (
+            <Link
+              to="/roadmap"
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                text-sm font-medium transition-colors flex-shrink-0
+                ${location.pathname === '/roadmap'
+                  ? 'bg-indigo-50 text-indigo-700'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+              </svg>
+              SOP Roadmap
             </Link>
           )}
 
@@ -169,6 +188,15 @@ export default function Header() {
                       className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                     >
                       Circles
+                    </Link>
+                  )}
+                  {showRoadmap && (
+                    <Link
+                      to="/roadmap"
+                      onClick={() => setDropdownOpen(false)}
+                      className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      SOP Roadmap
                     </Link>
                   )}
                   {(isAdmin || isCoAdmin) && (
