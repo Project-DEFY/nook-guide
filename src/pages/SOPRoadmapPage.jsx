@@ -501,9 +501,8 @@ function GanttRow({ sop, currentBand, isLast, onDotHover, tooltip }) {
                       ? null
                       : { sop, state: dot.state, label: dot.label }
                   )}
-                  className={`relative z-10 rounded-full border-2 border-white shadow-sm
+                  className={`relative z-10 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm
                     transition-transform hover:scale-125 active:scale-110 cursor-pointer flex-shrink-0
-                    ${bandDots.length > 1 ? 'w-3 h-3' : 'w-4 h-4'}
                     ${dot.state === 'intro'   ? 'bg-teal-500'   :
                       dot.state === 'apCheck' ? 'bg-yellow-400' : 'bg-indigo-500'}`}
                   title={dot.label}
